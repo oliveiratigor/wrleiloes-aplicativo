@@ -1,18 +1,38 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { apiCall } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Stepper } from "@/components/wizard/Stepper";
+import { StepVeiculo } from "@/components/wizard/StepVeiculo";
+import { StepEntrada } from "@/components/wizard/StepEntrada";
+import { StepFotos } from "@/components/wizard/StepFotos";
+import { StepVistoria, emptyVistoria, type VistoriaForm } from "@/components/wizard/StepVistoria";
+import {
+  clearWizard,
+  emptyWizard,
+  loadWizard,
+  saveWizard,
+  type WizardState,
+} from "@/lib/wizard-state";
+import { useAuth } from "@/hooks/use-auth";
+import { cadastrarProduto } from "@/lib/api/cadastro";
+import { salvarVistoria } from "@/lib/api/vistoria";
+import { buscarProduto } from "@/lib/api/buscar";
+import { toast } from "sonner";
+
+const STEPS = [
+  { id: 1, label: "Busca" },
+  { id: 2, label: "Veículo" },
+  { id: 3, label: "Entrada" },
+  { id: 4, label: "Fotos" },
+  { id: 5, label: "Vistoria" },
+];
 
 const searchSchema = z.object({
-  mode: z.enum(["create", "edit"]).default("create"),
-  entry: z.string().optional(),
-  cadastro: z.string().optional(),
+  step: z.coerce.number().min(1).max(5).catch(2),
 });
 
 export const Route = createFileRoute("/_authenticated/cadastro/$placa")({
@@ -23,48 +43,162 @@ export const Route = createFileRoute("/_authenticated/cadastro/$placa")({
 
 function CadastroPage() {
   const { placa } = Route.useParams();
-  const { mode, entry, cadastro } = Route.useSearch();
+  const { step } = Route.useSearch();
   const navigate = useNavigate();
+  const { user, account } = useAuth();
 
-  const [chassi, setChassi] = useState("");
-  const [marca, setMarca] = useState("");
-  const [modelo, setModelo] = useState("");
-  const [observacoes, setObservacoes] = useState("");
-  const [finalApproval, setFinalApproval] = useState<"approved" | "rejected" | "">("");
-  const [rejectionNotes, setRejectionNotes] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<WizardState>(() => loadWizard(placa) ?? emptyWizard(placa));
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [requiredOk, setRequiredOk] = useState(false);
+  const [vistoria, setVistoria] = useState<VistoriaForm>(emptyVistoria);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    const payload = {
-      // contrato `cadastrar-produto` aceita uuid pra update; sem uuid cria novo cadastro
-      uuid: mode === "edit" ? cadastro : undefined,
-      plate: placa,
-      chassis: chassi || undefined,
-      brand: marca || undefined,
-      model: modelo || undefined,
-      observations: observacoes || undefined,
-      final_approval_status: finalApproval || undefined,
-      rejection_notes: finalApproval === "rejected" ? rejectionNotes : undefined,
-      entry_id: entry,
+  // Persiste a cada mudança
+  useEffect(() => {
+    saveWizard(data);
+  }, [data]);
+
+  // Hidrata vistoria quando há entrada aberta
+  useEffect(() => {
+    if (!data.productId) return;
+    let cancelled = false;
+    (async () => {
+      const res = await buscarProduto({ uuid: data.productId });
+      if (cancelled || !res.found || !res.data) return;
+      const p = res.data.product;
+      setVistoria({
+        engineNumberVehicle: p.engine_number_vehicle ?? "",
+        engineNumberBase: p.engine_number_base ?? "",
+        chassisNumberVehicle: p.chassis_number_vehicle ?? "",
+        chassisNumberBase: p.chassis_number_base ?? "",
+        engineDivs: new Set(p.engine_discrepancies_uuid),
+        chassisDivs: new Set(p.chassis_discrepancies_uuid),
+        rejectionReasons: new Set(p.rejection_reasons_uuid),
+        initialCondition: p.initial_status_uuid ?? "",
+        finalClassification: p.final_classification_uuid ?? "",
+        finalApproval:
+          p.final_approval_status === "aprovado"
+            ? "approved"
+            : p.final_approval_status === "reprovado"
+              ? "rejected"
+              : "",
+        rejectionNotes: p.rejection_notes ?? "",
+        notes: "",
+      });
+    })();
+    return () => {
+      cancelled = true;
     };
-    const { data, error: err } = await apiCall<
-      typeof payload,
-      { entry_id?: string; product_id?: string; openEntry?: { id: string } }
-    >("cadastrar-produto", payload);
-    setLoading(false);
-    if (err) {
-      setError(err);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.productId]);
+
+  function update(p: Partial<WizardState>) {
+    setData((prev) => ({ ...prev, ...p }));
+  }
+
+  function go(next: number) {
+    navigate({
+      to: "/cadastro/$placa",
+      params: { placa },
+      search: { step: next },
+      replace: true,
+    });
+  }
+
+  const subtitle = useMemo(() => {
+    if (data.mode === "edit") return "Entrada em aberto — editando";
+    if (data.mode === "reentry") return "Reentrada — operacional herdado da última saída";
+    return "Novo cadastro";
+  }, [data.mode]);
+
+  async function saveStep3() {
+    if (!user?.uuid) {
+      setError("Sessão sem identidade — refaça login.");
       return;
     }
-    const entryId = data?.entry_id ?? data?.openEntry?.id ?? entry;
-    if (entryId) {
-      navigate({ to: "/fotos/$entryId", params: { entryId } });
-    } else {
+    if (!data.branchId) {
+      setError("Filial é obrigatória.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    const res = await cadastrarProduto({
+      user_data: { uuid: user.uuid, account_uuid: user.account_uuid ?? undefined },
+      product: {
+        uuid: data.mode === "edit" ? data.productId : data.productId, // backend reusa por placa
+        plate: data.plate,
+        chassis: data.chassis || null,
+        renavam: data.renavam || null,
+        engine: data.engine || null,
+        color: data.color || null,
+        has_key: data.hasKey,
+        mileage: data.mileage ? Number(data.mileage) : null,
+        type_uuid: data.typeId || null,
+        branch_uuid: data.branchId,
+        deposit_uuid: data.depositId || null,
+        consignor_uuid: data.principalId || null,
+        entry_type_uuid: data.entryTypeId || null,
+        charge_towing: data.chargeTowing,
+        km_initial: data.kmInitial ? Number(data.kmInitial) : null,
+        km_final: data.kmFinal ? Number(data.kmFinal) : null,
+      },
+      fipe_data: {
+        brand: data.brand || null,
+        model: data.model || null,
+        fuel: data.fuel || null,
+        fipe_codigo: data.fipeCodigo || null,
+        price: data.fipePrice ? Number(data.fipePrice) : null,
+      },
+    });
+    setSaving(false);
+    if (!res.ok) {
+      if (res.code === "OPEN_ENTRY_EXISTS") {
+        setError("Já existe entrada aberta para este veículo. Volte à busca e abra como edição.");
+      } else {
+        setError(`${res.code}: ${res.message}`);
+      }
+      return;
+    }
+    update({ productId: res.productId, entryId: res.entryId, mode: "edit" });
+    toast.success(res.isUpdate ? "Atualizado" : "Cadastrado");
+    go(4);
+  }
+
+  async function finishVistoria() {
+    if (!data.entryId) return;
+    if (vistoria.finalApproval === "rejected" && !vistoria.rejectionNotes.trim()) {
+      setError("Reprovação exige observação.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await salvarVistoria({
+        entryId: data.entryId,
+        engineNumberVehicle: vistoria.engineNumberVehicle || null,
+        engineNumberBase: vistoria.engineNumberBase || null,
+        chassisNumberVehicle: vistoria.chassisNumberVehicle || null,
+        chassisNumberBase: vistoria.chassisNumberBase || null,
+        engineDiscrepancies: [...vistoria.engineDivs],
+        chassisDiscrepancies: [...vistoria.chassisDivs],
+        rejectionReasons:
+          vistoria.finalApproval === "rejected" ? [...vistoria.rejectionReasons] : [],
+        initialConditionUuid: vistoria.initialCondition || null,
+        finalClassificationUuid: vistoria.finalClassification || null,
+        finalApproval: vistoria.finalApproval || null,
+        rejectionNotes: vistoria.rejectionNotes || null,
+        notes: vistoria.notes || null,
+        chargeTow: data.chargeTowing,
+        kmInitial: data.kmInitial ? Number(data.kmInitial) : null,
+        kmFinal: data.kmFinal ? Number(data.kmFinal) : null,
+      });
+      clearWizard(data.plate);
+      toast.success("Vistoria concluída");
       navigate({ to: "/buscar" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao salvar vistoria");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -72,97 +206,115 @@ function CadastroPage() {
     <div className="min-h-screen bg-background p-4">
       <div className="mx-auto max-w-md pb-3">
         <Link to="/buscar" className="text-sm text-muted-foreground hover:underline">
-          ← Voltar
+          ← Voltar para busca
         </Link>
       </div>
       <Card className="mx-auto max-w-md">
-        <CardHeader>
-          <CardTitle className="text-base">
-            {mode === "edit" ? "Editar entrada" : "Novo cadastro"} — {placa}
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">
-            {mode === "edit"
-              ? `Entrada ativa: ${entry}`
-              : cadastro
-                ? `Vinculado ao cadastro ${cadastro}`
-                : "Cadastro novo"}
-          </p>
+        <CardHeader className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">{placa}</CardTitle>
+              <p className="text-xs text-muted-foreground">{subtitle}</p>
+            </div>
+          </div>
+          <Stepper steps={STEPS} current={step} onJump={(id) => go(id)} />
         </CardHeader>
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4">
-            {mode === "create" && (
-              <div className="space-y-2">
-                <Label htmlFor="chassi">Chassi</Label>
-                <Input id="chassi" value={chassi} onChange={(e) => setChassi(e.target.value)} />
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="marca">Marca</Label>
-                <Input id="marca" value={marca} onChange={(e) => setMarca(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="modelo">Modelo</Label>
-                <Input
-                  id="modelo"
-                  value={modelo}
-                  onChange={(e) => setModelo(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="obs">Divergências / observações</Label>
-              <Textarea
-                id="obs"
-                rows={3}
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
+        <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {step === 2 && (
+            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+              <StepVeiculo
+                data={data}
+                update={update}
+                preFilled={data.mode === "new" && !!data.brand}
+                lockIdentity={data.mode !== "new"}
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Status final</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={finalApproval === "approved" ? "default" : "outline"}
-                  onClick={() => setFinalApproval("approved")}
-                  className="flex-1"
-                >
-                  Aprovar
-                </Button>
-                <Button
-                  type="button"
-                  variant={finalApproval === "rejected" ? "destructive" : "outline"}
-                  onClick={() => setFinalApproval("rejected")}
-                  className="flex-1"
-                >
-                  Reprovar
-                </Button>
-              </div>
-            </div>
-            {finalApproval === "rejected" && (
-              <div className="space-y-2">
-                <Label htmlFor="rej">Motivo da reprovação</Label>
-                <Textarea
-                  id="rej"
-                  rows={2}
-                  value={rejectionNotes}
-                  onChange={(e) => setRejectionNotes(e.target.value)}
-                  required
-                />
-              </div>
-            )}
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Salvando…" : "Salvar e ir para fotos"}
-            </Button>
-          </form>
+              <NavButtons onNext={() => go(3)} />
+            </Suspense>
+          )}
+
+          {step === 3 && (
+            <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+              <StepEntrada data={data} update={update} />
+              <NavButtons
+                onBack={() => go(2)}
+                onNext={saveStep3}
+                nextLabel={saving ? "Salvando…" : "Salvar e continuar"}
+                disabled={saving || !data.branchId}
+              />
+            </Suspense>
+          )}
+
+          {step === 4 && (
+            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+              {data.productId && data.entryId && account?.id ? (
+                <>
+                  <StepFotos
+                    productId={data.productId}
+                    entryId={data.entryId}
+                    accountId={account.id}
+                    onAllRequiredDone={setRequiredOk}
+                  />
+                  <NavButtons
+                    onBack={() => go(3)}
+                    onNext={() => go(5)}
+                    nextLabel="Ir para vistoria"
+                    disabled={!requiredOk}
+                  />
+                </>
+              ) : (
+                <Alert>
+                  <AlertDescription>
+                    Salve o passo 3 primeiro para anexar fotos.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </Suspense>
+          )}
+
+          {step === 5 && (
+            <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+              <StepVistoria form={vistoria} setForm={setVistoria} />
+              <NavButtons
+                onBack={() => go(4)}
+                onNext={finishVistoria}
+                nextLabel={saving ? "Salvando…" : "Concluir"}
+                disabled={saving || !data.entryId}
+              />
+            </Suspense>
+          )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function NavButtons({
+  onBack,
+  onNext,
+  nextLabel = "Continuar",
+  disabled,
+}: {
+  onBack?: () => void;
+  onNext: () => void;
+  nextLabel?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex gap-2 pt-2">
+      {onBack && (
+        <Button type="button" variant="outline" onClick={onBack} className="flex-1">
+          Voltar
+        </Button>
+      )}
+      <Button type="button" onClick={onNext} disabled={disabled} className="flex-1">
+        {nextLabel}
+      </Button>
     </div>
   );
 }
