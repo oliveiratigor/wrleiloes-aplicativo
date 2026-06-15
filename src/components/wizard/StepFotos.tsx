@@ -1,0 +1,258 @@
+import { useEffect, useRef, useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Camera, Check, Loader2, RefreshCw, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { tiposFotosQuery } from "@/lib/api/lookups";
+import { uploadFotoDirect, runWithConcurrency } from "@/lib/api/upload";
+import { supabase } from "@/lib/supabase";
+import type { PhotoType } from "@/lib/api/types";
+
+type Slot = {
+  type: PhotoType;
+  file?: File;
+  uploadedUrl?: string;
+  mediaId?: string;
+  status: "idle" | "queued" | "uploading" | "done" | "error";
+  error?: string;
+};
+
+export function StepFotos({
+  productId,
+  entryId,
+  accountId,
+  onAllRequiredDone,
+}: {
+  productId: string;
+  entryId: string;
+  accountId: string;
+  onAllRequiredDone?: (done: boolean) => void;
+}) {
+  const photoTypes = useSuspenseQuery(tiposFotosQuery).data;
+  const [slots, setSlots] = useState<Slot[]>(() =>
+    photoTypes.map((t) => ({ type: t, status: "idle" })),
+  );
+  const inputsRef = useRef<Record<string, HTMLInputElement | null>>({});
+
+  // Hidrata fotos já existentes na entrada (caso esteja editando entrada aberta)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("media")
+        .select("id, url, photo_type_id")
+        .eq("product_id", productId)
+        .eq("product_entry_id", entryId)
+        .is("deleted_at", null);
+      if (cancelled || !data) return;
+      setSlots((prev) =>
+        prev.map((s) => {
+          const m = data.find((d) => String(d.photo_type_id) === s.type.id);
+          return m ? { ...s, mediaId: m.id, uploadedUrl: m.url, status: "done" } : s;
+        }),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [productId, entryId]);
+
+  useEffect(() => {
+    const required = slots.filter((s) => s.type.is_required);
+    const allDone = required.every((s) => s.status === "done");
+    onAllRequiredDone?.(allDone);
+  }, [slots, onAllRequiredDone]);
+
+  function onPick(typeId: string, file: File | null) {
+    if (!file) return;
+    setSlots((prev) =>
+      prev.map((s) =>
+        s.type.id === typeId
+          ? { ...s, file, status: "queued", error: undefined }
+          : s,
+      ),
+    );
+  }
+
+  async function uploadPending() {
+    const pending = slots.filter((s) => s.file && s.status !== "done");
+    if (pending.length === 0) return;
+    setSlots((prev) =>
+      prev.map((s) =>
+        pending.find((p) => p.type.id === s.type.id) ? { ...s, status: "uploading" } : s,
+      ),
+    );
+    await runWithConcurrency(pending, async (slot) => {
+      try {
+        const res = await uploadFotoDirect({
+          file: slot.file!,
+          productId,
+          entryId,
+          photoTypeId: Number(slot.type.id),
+          accountId,
+        });
+        setSlots((prev) =>
+          prev.map((s) =>
+            s.type.id === slot.type.id
+              ? {
+                  ...s,
+                  status: "done",
+                  uploadedUrl: res.url,
+                  mediaId: res.mediaId,
+                  file: undefined,
+                }
+              : s,
+          ),
+        );
+      } catch (err) {
+        setSlots((prev) =>
+          prev.map((s) =>
+            s.type.id === slot.type.id
+              ? { ...s, status: "error", error: err instanceof Error ? err.message : String(err) }
+              : s,
+          ),
+        );
+      }
+    });
+  }
+
+  function clearSlot(typeId: string) {
+    setSlots((prev) =>
+      prev.map((s) =>
+        s.type.id === typeId
+          ? { ...s, file: undefined, status: s.uploadedUrl ? "done" : "idle", error: undefined }
+          : s,
+      ),
+    );
+  }
+
+  const totalDone = slots.filter((s) => s.status === "done").length;
+  const pendingCount = slots.filter((s) => s.file && s.status !== "done").length;
+  const uploading = slots.some((s) => s.status === "uploading");
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>
+            {totalDone}/{slots.length} enviadas
+          </span>
+          {pendingCount > 0 && <span>{pendingCount} aguardando upload</span>}
+        </div>
+        <Progress value={(totalDone / Math.max(slots.length, 1)) * 100} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {slots.map((s) => (
+          <div
+            key={s.type.id}
+            className={cn(
+              "relative overflow-hidden rounded-md border bg-muted/30",
+              s.status === "error" && "border-destructive",
+              s.status === "done" && "border-primary/30",
+            )}
+          >
+            <div className="aspect-square w-full">
+              {s.uploadedUrl ? (
+                <img
+                  src={s.uploadedUrl}
+                  alt={s.type.text}
+                  className="h-full w-full object-cover"
+                />
+              ) : s.file ? (
+                <FilePreview file={s.file} />
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  <Camera className="h-7 w-7" />
+                </div>
+              )}
+              {s.status === "uploading" && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/60">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              )}
+              {s.status === "done" && (
+                <div className="absolute right-1 top-1 rounded-full bg-primary p-1 text-primary-foreground">
+                  <Check className="h-3 w-3" />
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-between gap-1 p-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium">{s.type.text}</p>
+                {s.type.is_required && (
+                  <Badge variant="outline" className="mt-0.5 h-4 px-1 text-[10px]">
+                    obrigatória
+                  </Badge>
+                )}
+                {s.error && (
+                  <p className="mt-0.5 truncate text-[10px] text-destructive">
+                    {s.error}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                {(s.file || s.uploadedUrl) && (
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    onClick={() => clearSlot(s.type.id)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="h-7 w-7"
+                  onClick={() => inputsRef.current[s.type.id]?.click()}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+            <input
+              ref={(el) => {
+                inputsRef.current[s.type.id] = el;
+              }}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => onPick(s.type.id, e.target.files?.[0] ?? null)}
+            />
+          </div>
+        ))}
+      </div>
+
+      <Button
+        type="button"
+        className="w-full"
+        onClick={uploadPending}
+        disabled={pendingCount === 0 || uploading}
+      >
+        {uploading
+          ? "Enviando…"
+          : pendingCount > 0
+            ? `Enviar ${pendingCount} foto(s)`
+            : "Nenhuma foto pendente"}
+      </Button>
+    </div>
+  );
+}
+
+function FilePreview({ file }: { file: File }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const u = URL.createObjectURL(file);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  if (!url) return null;
+  return <img src={url} alt="preview" className="h-full w-full object-cover" />;
+}
