@@ -5,22 +5,21 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { apiCall } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
 import { signOut } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
+import { buscarProduto, hasOpenEntry } from "@/lib/api/buscar";
+import { consultaVeiculo } from "@/lib/api/consulta";
+import { saveWizard, emptyWizard, type WizardState } from "@/lib/wizard-state";
 
 export const Route = createFileRoute("/_authenticated/buscar")({
   head: () => ({ meta: [{ title: "Buscar veículo" }] }),
   component: BuscarPage,
 });
 
-type BuscaResponse = {
-  error?: string;
-  product?: { id: string; plate: string; chassis?: string; account_id?: string } | null;
-  openEntry?: { id: string } | null;
-};
-
 function BuscarPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,45 +29,75 @@ function BuscarPage() {
     setError(null);
     setLoading(true);
     const placa = query.trim().toUpperCase();
-    const { data, error: err } = await apiCall<{ placa: string }, BuscaResponse>(
-      "buscar-produto",
-      { placa },
-    );
-    setLoading(false);
-    if (err) {
-      setError(err);
-      return;
+    try {
+      const [busca, consulta] = await Promise.all([
+        buscarProduto({ plate: placa, chassis: placa }),
+        consultaVeiculo({ plate: placa }),
+      ]);
+      if (busca.error) {
+        setError(busca.error);
+        return;
+      }
+
+      // Não encontrado → novo cadastro, pré-preenchido pela consulta WR
+      if (!busca.found || !busca.data) {
+        const wiz = emptyWizard(placa, "new");
+        if (consulta.data) applyConsulta(wiz, consulta.data);
+        saveWizard(wiz);
+        navigate({ to: "/cadastro/$placa", params: { placa }, search: { step: 2 } });
+        return;
+      }
+
+      const { product, fipe_data } = busca.data;
+      const open = hasOpenEntry(busca.data);
+      const mode: "edit" | "reentry" = open ? "edit" : "reentry";
+      const wiz = emptyWizard(placa, mode);
+      wiz.productId = product.uuid;
+      wiz.plate = product.plate;
+      wiz.chassis = product.chassis ?? "";
+      wiz.renavam = product.renavam ?? "";
+      wiz.engine = product.engine ?? "";
+      wiz.color = product.color ?? "";
+      wiz.mileage = product.mileage != null ? String(product.mileage) : "";
+      wiz.hasKey = !!product.has_key;
+      wiz.typeId = product.type_uuid ?? "";
+      wiz.brand = fipe_data.brand ?? "";
+      wiz.model = fipe_data.model ?? "";
+      wiz.fuel = fipe_data.fuel ?? "";
+      wiz.fipeCodigo = fipe_data.fipe_codigo ?? "";
+      wiz.fipePrice = fipe_data.price != null ? String(fipe_data.price) : "";
+      wiz.yearModel = fipe_data.year ?? "";
+      wiz.branchId = product.branch_uuid ?? "";
+      wiz.depositId = product.deposit_uuid ?? "";
+      wiz.principalId = product.consignor_uuid ?? "";
+      wiz.entryTypeId = product.entry_type_uuid ?? "";
+      wiz.chargeTowing = !!product.charge_towing;
+      wiz.kmInitial = product.towing_km_initial != null ? String(product.towing_km_initial) : "";
+      wiz.kmFinal = product.towing_km_final != null ? String(product.towing_km_final) : "";
+      saveWizard(wiz);
+
+      // edit = pula direto para passo 3 (operacional já preenchido) e segue
+      // reentry = também passo 3, mas operacional editável vindo da última saída
+      navigate({ to: "/cadastro/$placa", params: { placa }, search: { step: 3 } });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro inesperado.");
+    } finally {
+      setLoading(false);
     }
-    // `buscar-produto` retorna { error: "Produto não encontrado" } com status 200 quando não acha
-    if (data?.error || !data?.product) {
-      navigate({ to: "/cadastro/$placa", params: { placa }, search: { mode: "create" } });
-      return;
-    }
-    const product = data.product;
-    const openEntryId = data.openEntry?.id ?? null;
-    if (openEntryId) {
-      navigate({
-        to: "/cadastro/$placa",
-        params: { placa },
-        search: { mode: "edit", entry: openEntryId, cadastro: product.id },
-      });
-      return;
-    }
-    // Cadastro existe, sem entrada aberta → cria nova entrada vinculada ao mesmo produto
-    navigate({
-      to: "/cadastro/$placa",
-      params: { placa },
-      search: { mode: "create", cadastro: product.id },
-    });
   }
 
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="mx-auto flex max-w-md items-center justify-between pb-4">
-        <h1 className="text-lg font-semibold">Buscar veículo</h1>
-        <Button variant="ghost" size="sm" onClick={() => signOut()}>
-          Sair
-        </Button>
+        <div>
+          <h1 className="text-lg font-semibold">Buscar veículo</h1>
+          {user?.name && (
+            <p className="text-xs text-muted-foreground">
+              {user.name} {user.role && <Badge variant="outline" className="ml-1 h-4 px-1 text-[10px]">{user.role}</Badge>}
+            </p>
+          )}
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => signOut()}>Sair</Button>
       </div>
       <Card className="mx-auto max-w-md">
         <CardHeader>
@@ -100,4 +129,26 @@ function BuscarPage() {
       </Card>
     </div>
   );
+}
+
+function applyConsulta(
+  wiz: WizardState,
+  c: { placa?: string; chassi?: string; renavam?: string; marca?: string; modelo?: string; cor?: string; combustivel?: string; ano_fabricacao?: string; ano_modelo?: string; motor?: string; cod_fipe?: string },
+) {
+  wiz.plate = c.placa || wiz.plate;
+  wiz.chassis = c.chassi || "";
+  wiz.renavam = c.renavam || "";
+  wiz.engine = c.motor || "";
+  wiz.brand = c.marca || "";
+  wiz.model = c.modelo || "";
+  wiz.color = c.cor || "";
+  wiz.fuel = (c.combustivel || "")
+    .split("/")
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+    .join("/");
+  wiz.yearManufacture = c.ano_fabricacao || "";
+  wiz.yearModel = c.ano_modelo || "";
+  wiz.fipeCodigo = c.cod_fipe || "";
 }
