@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { applySession, loginWithPassword, loginWithTotp } from "@/lib/auth";
+import { applySession, loginWithPassword, loginWithTotp, rememberIdentity } from "@/lib/auth";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/auth")({
@@ -51,10 +51,12 @@ function AuthPage() {
       setError("message" in res ? res.message : "Falha ao entrar.");
       return;
     }
+    rememberIdentity(res.user, res.account);
     await applySession(res.token, res.refresh_token);
     router.invalidate();
     navigate({ to: "/buscar", replace: true });
   }
+
 
   async function submitTotp(e: React.FormEvent) {
     e.preventDefault();
@@ -67,6 +69,7 @@ function AuthPage() {
       setError(res.message);
       return;
     }
+    rememberIdentity(res.user, res.account);
     await applySession(res.token, res.refresh_token);
     router.invalidate();
     navigate({ to: "/buscar", replace: true });

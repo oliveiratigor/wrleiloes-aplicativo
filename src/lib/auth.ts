@@ -1,5 +1,7 @@
 import { supabase } from "./supabase";
 import { apiCall } from "./api";
+import { clearIdentity, saveIdentity, type AppAccount, type AppUser } from "./auth-storage";
+
 
 /** Resposta bruta do edge `panel-login`. */
 type PanelLoginRaw = {
@@ -8,17 +10,18 @@ type PanelLoginRaw = {
   temp_token?: string;
   token?: string;
   refresh_token?: string;
-  user?: unknown;
+  user?: AppUser;
+  account?: AppAccount | null;
   message?: string;
 };
 
 export type LoginStage1Result =
-  | { ok: true; token: string; refresh_token: string; user: unknown }
+  | { ok: true; token: string; refresh_token: string; user: AppUser; account: AppAccount | null }
   | { ok: false; requires_2fa: true; temp_token: string }
   | { ok: false; requires_2fa?: false; message: string };
 
 export type LoginStage2Result =
-  | { ok: true; token: string; refresh_token: string; user: unknown }
+  | { ok: true; token: string; refresh_token: string; user: AppUser; account: AppAccount | null }
   | { ok: false; message: string };
 
 function normalize(
@@ -26,8 +29,14 @@ function normalize(
   error: string | null,
 ): LoginStage1Result {
   // Sucesso
-  if (data?.ok && data.token && data.refresh_token) {
-    return { ok: true, token: data.token, refresh_token: data.refresh_token, user: data.user };
+  if (data?.ok && data.token && data.refresh_token && data.user) {
+    return {
+      ok: true,
+      token: data.token,
+      refresh_token: data.refresh_token,
+      user: data.user,
+      account: data.account ?? null,
+    };
   }
   // 2FA requerido
   if (data?.requires_2fa && data.temp_token) {
@@ -56,8 +65,14 @@ export async function loginWithTotp(temp_token: string, totp_code: string): Prom
     { temp_token: string; totp_code: string },
     PanelLoginRaw
   >("panel-login", { temp_token, totp_code });
-  if (data?.ok && data.token && data.refresh_token) {
-    return { ok: true, token: data.token, refresh_token: data.refresh_token, user: data.user };
+  if (data?.ok && data.token && data.refresh_token && data.user) {
+    return {
+      ok: true,
+      token: data.token,
+      refresh_token: data.refresh_token,
+      user: data.user,
+      account: data.account ?? null,
+    };
   }
   if (data?.message) return { ok: false, message: data.message };
   return { ok: false, message: error ?? "Código inválido ou erro de conexão." };
@@ -69,6 +84,12 @@ export async function applySession(access_token: string, refresh_token: string) 
   if (error) throw new Error(error.message);
 }
 
+/** Persiste user/account vindos do panel-login para uso nos payloads. */
+export function rememberIdentity(user: AppUser, account: AppAccount | null) {
+  saveIdentity({ user, account });
+}
+
 export async function signOut() {
+  clearIdentity();
   await supabase.auth.signOut();
 }
