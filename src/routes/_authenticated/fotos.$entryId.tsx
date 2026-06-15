@@ -33,7 +33,7 @@ async function pickPhoto(): Promise<string | null> {
     input.type = "file";
     input.accept = "image/*";
     // Camera nativa quando disponível (Capacitor / mobile web)
-    input.capture = "environment" as unknown as boolean extends never ? never : "environment";
+    (input as HTMLInputElement & { capture?: string }).capture = "environment";
     input.onchange = () => {
       const file = input.files?.[0];
       if (!file) return resolve(null);
