@@ -87,8 +87,8 @@ export async function apiCall<TReq, TRes>(
     data = (res.data as TRes) ?? null;
     if (res.error) {
       errorMsg = res.error.message;
-      // @ts-expect-error supabase types não expõem status garantidamente
-      status = res.error.context?.status ?? null;
+      const ctx = (res.error as unknown as { context?: { status?: number } }).context;
+      status = ctx?.status ?? null;
     } else {
       ok = true;
       status = 200;
