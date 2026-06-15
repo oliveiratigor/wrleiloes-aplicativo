@@ -47,21 +47,25 @@ function truncate(value: unknown, max = 4000): unknown {
 }
 
 async function shipTelemetry(entry: DiagnosticEntry) {
-  // Backoffice lê isso na tela /diagnostico-app.
-  // Best-effort: nunca quebrar a chamada principal por falha de telemetria.
+  // Reaproveita a tabela `system_logs` do Backoffice.
+  // Backoffice lê isso na futura tela /diagnostico-app filtrando por source = 'app-mobile-v2'.
   try {
-    await supabase.from("app_diagnostics").insert({
+    await supabase.from("system_logs").insert({
+      type: entry.ok ? "info" : "error",
       source: SOURCE,
-      fn: entry.fn,
-      status: entry.status,
-      latency_ms: entry.latency_ms,
-      ok: entry.ok,
-      error: entry.error ?? null,
-      request_preview: entry.request_preview ?? null,
-      response_preview: entry.response_preview ?? null,
+      payload: {
+        fn: entry.fn,
+        status: entry.status,
+        latency_ms: entry.latency_ms,
+        ok: entry.ok,
+        error: entry.error ?? null,
+        request_preview: entry.request_preview ?? null,
+        response_preview: entry.response_preview ?? null,
+        ts: entry.ts,
+      },
     });
   } catch {
-    // tabela pode não existir ainda — não derruba o app.
+    // não derruba o app por falha de telemetria
   }
 }
 
