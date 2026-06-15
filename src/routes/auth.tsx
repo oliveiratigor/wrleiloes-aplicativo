@@ -42,20 +42,18 @@ function AuthPage() {
     setLoading(true);
     const res = await loginWithPassword(email.trim(), password);
     setLoading(false);
-    if (!res.ok) {
-      setError(res.message);
-      return;
-    }
-    if ("needs_2fa" in res && res.needs_2fa) {
+    if (!res.ok && "requires_2fa" in res && res.requires_2fa) {
       setTempToken(res.temp_token);
       setStage("totp");
       return;
     }
-    if ("access_token" in res) {
-      await applySession(res.access_token, res.refresh_token);
-      router.invalidate();
-      navigate({ to: "/buscar", replace: true });
+    if (!res.ok) {
+      setError("message" in res ? res.message : "Falha ao entrar.");
+      return;
     }
+    await applySession(res.token, res.refresh_token);
+    router.invalidate();
+    navigate({ to: "/buscar", replace: true });
   }
 
   async function submitTotp(e: React.FormEvent) {
@@ -69,7 +67,7 @@ function AuthPage() {
       setError(res.message);
       return;
     }
-    await applySession(res.access_token, res.refresh_token);
+    await applySession(res.token, res.refresh_token);
     router.invalidate();
     navigate({ to: "/buscar", replace: true });
   }

@@ -1,33 +1,66 @@
 import { supabase } from "./supabase";
 import { apiCall } from "./api";
 
+/** Resposta bruta do edge `panel-login`. */
+type PanelLoginRaw = {
+  ok?: boolean;
+  requires_2fa?: boolean;
+  temp_token?: string;
+  token?: string;
+  refresh_token?: string;
+  user?: unknown;
+  message?: string;
+};
+
 export type LoginStage1Result =
-  | { ok: true; needs_2fa: true; temp_token: string; message?: string }
-  | { ok: true; needs_2fa: false; access_token: string; refresh_token: string; user: unknown }
-  | { ok: false; message: string };
+  | { ok: true; token: string; refresh_token: string; user: unknown }
+  | { ok: false; requires_2fa: true; temp_token: string }
+  | { ok: false; requires_2fa?: false; message: string };
 
 export type LoginStage2Result =
-  | { ok: true; access_token: string; refresh_token: string; user: unknown }
+  | { ok: true; token: string; refresh_token: string; user: unknown }
   | { ok: false; message: string };
 
-/** Stage 1 — email + senha → temp_token (se 2FA) ou sessão direta. */
-export async function loginWithPassword(email: string, password: string) {
+function normalize(
+  data: PanelLoginRaw | null,
+  error: string | null,
+): LoginStage1Result {
+  // Sucesso
+  if (data?.ok && data.token && data.refresh_token) {
+    return { ok: true, token: data.token, refresh_token: data.refresh_token, user: data.user };
+  }
+  // 2FA requerido
+  if (data?.requires_2fa && data.temp_token) {
+    return { ok: false, requires_2fa: true, temp_token: data.temp_token };
+  }
+  // Mensagem do edge (ex.: "Credenciais inválidas.")
+  if (data?.message) {
+    return { ok: false, message: data.message };
+  }
+  // Sem corpo (supabase-js descarta body em 4xx/5xx)
+  return { ok: false, message: error ?? "Credenciais inválidas ou erro de conexão." };
+}
+
+/** Stage 1 — email + senha → token (se sem 2FA) ou temp_token (se 2FA). */
+export async function loginWithPassword(email: string, password: string): Promise<LoginStage1Result> {
   const { data, error } = await apiCall<
     { email: string; password: string },
-    LoginStage1Result
+    PanelLoginRaw
   >("panel-login", { email, password });
-  if (error || !data) return { ok: false as const, message: error ?? "Falha na conexão." };
-  return data;
+  return normalize(data, error);
 }
 
 /** Stage 2 — temp_token + TOTP → sessão Supabase. */
-export async function loginWithTotp(temp_token: string, totp_code: string) {
+export async function loginWithTotp(temp_token: string, totp_code: string): Promise<LoginStage2Result> {
   const { data, error } = await apiCall<
     { temp_token: string; totp_code: string },
-    LoginStage2Result
+    PanelLoginRaw
   >("panel-login", { temp_token, totp_code });
-  if (error || !data) return { ok: false as const, message: error ?? "Falha na conexão." };
-  return data;
+  if (data?.ok && data.token && data.refresh_token) {
+    return { ok: true, token: data.token, refresh_token: data.refresh_token, user: data.user };
+  }
+  if (data?.message) return { ok: false, message: data.message };
+  return { ok: false, message: error ?? "Código inválido ou erro de conexão." };
 }
 
 /** Aplica a sessão retornada pelo panel-login no client Supabase local. */
