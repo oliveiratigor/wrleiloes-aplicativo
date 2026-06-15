@@ -1,63 +1,39 @@
-# Corrigir login do app — contrato do `panel-login`
+# Portar design system do Backoffice
 
-## Problema
+## O que vamos copiar
 
-O `panel-login` do Backoffice retorna campos diferentes do que `src/lib/auth.ts` espera. Resultado: ao clicar **Entrar**, o request vai ao servidor, volta com sucesso, mas o código não reconhece a resposta — o botão volta a "Entrar" sem navegar e sem mostrar erro. Quando há 2FA, o app trata como erro genérico porque `ok` vem `false`.
+Tokens semânticos do Backoffice (vermelho WR + tons de cinza + dark sidebar) e a fonte Inter. O Backoffice usa Tailwind v3 com HSL; este app usa Tailwind v4 com `oklch`. Mantemos os mesmos **valores** (HSL embrulhado em `hsl(...)`) — Tailwind v4 aceita qualquer color string nas variáveis.
 
-### Contrato real (Backoffice)
+## Mudanças
 
-| Caso | Status HTTP | Corpo |
-|---|---|---|
-| Sucesso (sem 2FA) | 200 | `{ ok: true, token, refresh_token, user, session, account, available_accounts }` |
-| Sucesso (2FA OK) | 200 | igual ao de cima |
-| Precisa 2FA | 200 | `{ ok: false, requires_2fa: true, temp_token, message }` |
-| Credenciais inválidas | 401 | `{ ok: false, message }` (vem em `response.error.context`) |
-| 2FA inválido / token expirado | 200 | `{ ok: false, message }` |
+### 1. `src/styles.css`
+Substituir o bloco de tokens pelo do Backoffice, em formato compatível com v4:
 
-O app hoje espera `needs_2fa` e `access_token` — campos que **não existem** na resposta.
+- `:root` e `.dark` com as cores HSL do Backoffice, escritas como `hsl(0 72% 47%)`.
+- Adicionar tokens que o Backoffice tem e o app não: `--success`, `--success-foreground`, `--warning`, `--warning-foreground`, e os `--sidebar-*` (incluindo `--sidebar-muted-foreground`).
+- Atualizar `@theme inline` para mapear esses novos tokens (`--color-success`, `--color-warning`, `--color-sidebar-muted-foreground`).
+- Trocar `--radius` para `0.5rem` (valor do Backoffice).
+- Adicionar `--font-sans: 'Inter', sans-serif;` em `@theme inline` para gerar `font-sans` com Inter.
+- Manter `@import "tailwindcss" source(none); @source "../src"; @import "tw-animate-css";` e `@custom-variant dark` como estão.
+- Manter `body { background-color/color }` e `* { border-color }`.
+- Adicionar utilitários `.scrollbar-thin` / `.scrollbar-none` que o Backoffice usa, via `@utility` (sintaxe v4).
+- **Não** usar `@import` de URL de fonte (Lightning CSS quebra). Fonte vem via `<link>`.
 
-## Solução
+### 2. `src/routes/__root.tsx`
+Adicionar à `head().links` os `<link>` da Inter:
+```ts
+{ rel: "preconnect", href: "https://fonts.googleapis.com" },
+{ rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+{ rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" },
+```
 
-Reescrever apenas `src/lib/auth.ts` para casar com o contrato real. Sem mudanças em `api.ts` (telemetria continua igual) e sem alterar nada no Backoffice.
+## Não muda
 
-### Mudanças em `src/lib/auth.ts`
-
-1. **Tipos** alinhados ao contrato:
-   - `LoginStage1Result`:
-     - `{ ok: true; token: string; refresh_token: string; user: unknown }`
-     - `{ ok: false; requires_2fa: true; temp_token: string }`
-     - `{ ok: false; message: string }`
-   - `LoginStage2Result`:
-     - `{ ok: true; token: string; refresh_token: string; user: unknown }`
-     - `{ ok: false; message: string }`
-
-2. **Parser de erro HTTP**: quando `apiCall` retorna `error` mas o `data` tem `message`/`requires_2fa`, usar `data` (panel-login devolve 401 com corpo útil). Para isso, ler `data` mesmo quando `error` está presente — `api.ts` já popula `data` antes de detectar `res.error`, mas a invoke do supabase-js descarta o body em status não-2xx. Solução: em `auth.ts`, se `data` for null e houver `error`, retornar `{ ok: false, message: error }`. Para o caso 401 com message útil, basta exibir "Credenciais inválidas." (mensagem do Edge) — vamos extrair de `error` quando vier no formato `"Edge Function returned a non-2xx status code"` e cair num fallback amigável.
-
-   Como na prática o supabase-js engole o body do 401, manter a UX boa: se `error && !data`, mostrar **"Credenciais inválidas ou erro de conexão."** (mensagem padrão) — suficiente para o caso de uso.
-
-3. **`loginWithPassword`**: retornar normalizado `{ ok: true, token, refresh_token, user }` ou `{ ok: false, requires_2fa: true, temp_token }` ou `{ ok: false, message }`.
-
-4. **`loginWithTotp`**: idem para stage 2.
-
-5. **`applySession(token, refresh_token)`**: continua igual (`supabase.auth.setSession`).
-
-### Mudanças em `src/routes/auth.tsx`
-
-Ajustar dois pontos de leitura para os novos nomes:
-
-- `submitPassword`: trocar `"needs_2fa" in res && res.needs_2fa` por `!res.ok && "requires_2fa" in res && res.requires_2fa`; trocar `res.access_token` por `res.token`.
-- `submitTotp`: trocar `res.access_token` por `res.token`.
-
-Nenhuma mudança visual; apenas o mapeamento dos campos.
+- Componentes shadcn já instalados continuam funcionando (consomem os mesmos nomes de token: `bg-primary`, `text-foreground`, etc.).
+- Nenhuma alteração nas rotas/telas — apenas o sistema de cores e a tipografia.
+- Sem dark mode toggle (Backoffice também não força; usamos só `:root` por padrão).
 
 ## Validação
 
-1. Tentar logar com usuário sem 2FA → deve navegar para `/buscar`.
-2. Tentar logar com usuário com 2FA → deve aparecer tela do código.
-3. Senha errada → deve mostrar mensagem de erro.
-
-## Fora do escopo
-
-- Não tocar no `panel-login` (Backoffice) — contrato fica intacto.
-- Não mexer em telemetria nem em `api.ts`.
-- Diagnóstico no Backoffice (`/diagnostico-app`) fica para outra etapa.
+- Abrir `/auth` e `/buscar`: botão primário deve ficar **vermelho WR**, fundo cinza claro, texto Inter.
+- Inputs e cards devem manter contraste correto.
