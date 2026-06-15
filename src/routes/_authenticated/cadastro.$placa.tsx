@@ -40,27 +40,27 @@ function CadastroPage() {
     setError(null);
     setLoading(true);
     const payload = {
-      placa,
-      chassi: chassi || undefined,
-      marca,
-      modelo,
-      observacoes,
+      // contrato `cadastrar-produto` aceita uuid pra update; sem uuid cria novo cadastro
+      uuid: mode === "edit" ? cadastro : undefined,
+      plate: placa,
+      chassis: chassi || undefined,
+      brand: marca || undefined,
+      model: modelo || undefined,
+      observations: observacoes || undefined,
       final_approval_status: finalApproval || undefined,
       rejection_notes: finalApproval === "rejected" ? rejectionNotes : undefined,
-      cadastro_id: cadastro,
       entry_id: entry,
     };
-    const fn = mode === "edit" ? "atualizar-produto" : "cadastrar-produto";
-    const { data, error: err } = await apiCall<typeof payload, { entry_id?: string }>(
-      fn,
-      payload,
-    );
+    const { data, error: err } = await apiCall<
+      typeof payload,
+      { entry_id?: string; product_id?: string; openEntry?: { id: string } }
+    >("cadastrar-produto", payload);
     setLoading(false);
     if (err) {
       setError(err);
       return;
     }
-    const entryId = data?.entry_id ?? entry;
+    const entryId = data?.entry_id ?? data?.openEntry?.id ?? entry;
     if (entryId) {
       navigate({ to: "/fotos/$entryId", params: { entryId } });
     } else {
