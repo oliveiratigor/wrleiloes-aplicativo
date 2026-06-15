@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { signOut } from "@/lib/auth";
 import { useAuth } from "@/hooks/use-auth";
-import { buscarProduto, hasOpenEntry } from "@/lib/api/buscar";
+import { buscarProduto, detectIdentifier, hasOpenEntry } from "@/lib/api/buscar";
 import { consultaVeiculo } from "@/lib/api/consulta";
 import { saveWizard, emptyWizard, type WizardState } from "@/lib/wizard-state";
 
