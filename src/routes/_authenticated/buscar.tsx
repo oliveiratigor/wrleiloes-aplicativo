@@ -27,24 +27,41 @@ function BuscarPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const id = detectIdentifier(query);
+    if (id.kind === "invalid") {
+      setError(id.reason);
+      return;
+    }
     setLoading(true);
-    const placa = query.trim().toUpperCase();
     try {
+      const buscarPayload = id.kind === "plate" ? { plate: id.plate } : { renavam: id.renavam };
       const [busca, consulta] = await Promise.all([
-        buscarProduto({ plate: placa, chassis: placa }),
-        consultaVeiculo({ plate: placa }),
+        buscarProduto(buscarPayload),
+        // WR API só aceita placa/chassi — pula em renavam puro
+        id.kind === "plate"
+          ? consultaVeiculo({ plate: id.plate })
+          : Promise.resolve({ data: null, error: null }),
       ]);
       if (busca.error) {
         setError(busca.error);
         return;
       }
 
+      // Placa de navegação: prioriza o que o backend devolveu; senão usa o input (só placa)
+      const navPlate = (busca.data && "product" in busca.data
+        ? busca.data.product.plate
+        : id.kind === "plate" ? id.plate : "") || "";
+
       // Não encontrado → novo cadastro, pré-preenchido pela consulta WR
       if (!busca.found || !busca.data) {
-        const wiz = emptyWizard(placa, "new");
+        if (id.kind !== "plate") {
+          setError("Renavam não encontrado. Para novo cadastro, busque pela placa.");
+          return;
+        }
+        const wiz = emptyWizard(id.plate, "new");
         if (consulta.data) applyConsulta(wiz, consulta.data);
         saveWizard(wiz);
-        navigate({ to: "/cadastro/$placa", params: { placa }, search: { step: 2 } });
+        navigate({ to: "/cadastro/$placa", params: { placa: id.plate }, search: { step: 2 } });
         return;
       }
 
