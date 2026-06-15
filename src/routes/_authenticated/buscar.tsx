@@ -118,16 +118,16 @@ function BuscarPage() {
       </div>
       <Card className="mx-auto max-w-md">
         <CardHeader>
-          <CardTitle className="text-base">Placa ou chassi</CardTitle>
+          <CardTitle className="text-base">Placa ou renavam</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="q">Identificador</Label>
+              <Label htmlFor="q">Placa ou renavam</Label>
               <Input
                 id="q"
                 autoFocus
-                placeholder="ABC1D23"
+                placeholder="ABC1D23 ou 12345678901"
                 value={query}
                 onChange={(e) => setQuery(e.target.value.toUpperCase())}
                 required
