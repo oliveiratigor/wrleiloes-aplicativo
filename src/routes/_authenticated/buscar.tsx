@@ -14,13 +14,9 @@ export const Route = createFileRoute("/_authenticated/buscar")({
 });
 
 type BuscaResponse = {
-  cadastro?: {
-    id: string;
-    placa: string;
-    chassi?: string;
-    has_active_entry: boolean;
-    active_entry_id?: string | null;
-  } | null;
+  error?: string;
+  product?: { id: string; plate: string; chassis?: string; account_id?: string } | null;
+  openEntry?: { id: string } | null;
 };
 
 function BuscarPage() {
@@ -33,37 +29,36 @@ function BuscarPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    // Reaproveita endpoint do Backoffice. Ajuste o nome quando confirmarmos.
+    const placa = query.trim().toUpperCase();
     const { data, error: err } = await apiCall<{ placa: string }, BuscaResponse>(
       "buscar-produto",
-      { placa: query.trim().toUpperCase() },
+      { placa },
     );
     setLoading(false);
     if (err) {
       setError(err);
       return;
     }
-    const placa = query.trim().toUpperCase();
-    const cadastro = data?.cadastro ?? null;
-    if (!cadastro) {
-      // Sem cadastro → criar novo
+    // `buscar-produto` retorna { error: "Produto não encontrado" } com status 200 quando não acha
+    if (data?.error || !data?.product) {
       navigate({ to: "/cadastro/$placa", params: { placa }, search: { mode: "create" } });
       return;
     }
-    if (cadastro.has_active_entry && cadastro.active_entry_id) {
-      // Cadastro existe + entrada ativa → editar
+    const product = data.product;
+    const openEntryId = data.openEntry?.id ?? null;
+    if (openEntryId) {
       navigate({
         to: "/cadastro/$placa",
         params: { placa },
-        search: { mode: "edit", entry: cadastro.active_entry_id },
+        search: { mode: "edit", entry: openEntryId, cadastro: product.id },
       });
       return;
     }
-    // Cadastro existe + sem entrada ativa → cria nova entrada vinculada
+    // Cadastro existe, sem entrada aberta → cria nova entrada vinculada ao mesmo produto
     navigate({
       to: "/cadastro/$placa",
       params: { placa },
-      search: { mode: "create", cadastro: cadastro.id },
+      search: { mode: "create", cadastro: product.id },
     });
   }
 

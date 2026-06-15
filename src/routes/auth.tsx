@@ -9,6 +9,7 @@ import { applySession, loginWithPassword, loginWithTotp } from "@/lib/auth";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Entrar — WR Vistoria" },
