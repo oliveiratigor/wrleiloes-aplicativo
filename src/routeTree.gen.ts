@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedBuscarRouteImport } from './routes/_authenticated/buscar'
+import { Route as AuthenticatedFotosEntryIdRouteImport } from './routes/_authenticated/fotos.$entryId'
 import { Route as AuthenticatedCadastroPlacaRouteImport } from './routes/_authenticated/cadastro.$placa'
 
 const AuthRoute = AuthRouteImport.update({
@@ -34,6 +35,12 @@ const AuthenticatedBuscarRoute = AuthenticatedBuscarRouteImport.update({
   path: '/buscar',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFotosEntryIdRoute =
+  AuthenticatedFotosEntryIdRouteImport.update({
+    id: '/fotos/$entryId',
+    path: '/fotos/$entryId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCadastroPlacaRoute =
   AuthenticatedCadastroPlacaRouteImport.update({
     id: '/cadastro/$placa',
@@ -46,12 +53,14 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/buscar': typeof AuthenticatedBuscarRoute
   '/cadastro/$placa': typeof AuthenticatedCadastroPlacaRoute
+  '/fotos/$entryId': typeof AuthenticatedFotosEntryIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/buscar': typeof AuthenticatedBuscarRoute
   '/cadastro/$placa': typeof AuthenticatedCadastroPlacaRoute
+  '/fotos/$entryId': typeof AuthenticatedFotosEntryIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -60,12 +69,13 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/buscar': typeof AuthenticatedBuscarRoute
   '/_authenticated/cadastro/$placa': typeof AuthenticatedCadastroPlacaRoute
+  '/_authenticated/fotos/$entryId': typeof AuthenticatedFotosEntryIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/buscar' | '/cadastro/$placa'
+  fullPaths: '/' | '/auth' | '/buscar' | '/cadastro/$placa' | '/fotos/$entryId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/buscar' | '/cadastro/$placa'
+  to: '/' | '/auth' | '/buscar' | '/cadastro/$placa' | '/fotos/$entryId'
   id:
     | '__root__'
     | '/'
@@ -73,6 +83,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/buscar'
     | '/_authenticated/cadastro/$placa'
+    | '/_authenticated/fotos/$entryId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -111,6 +122,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBuscarRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/fotos/$entryId': {
+      id: '/_authenticated/fotos/$entryId'
+      path: '/fotos/$entryId'
+      fullPath: '/fotos/$entryId'
+      preLoaderRoute: typeof AuthenticatedFotosEntryIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/cadastro/$placa': {
       id: '/_authenticated/cadastro/$placa'
       path: '/cadastro/$placa'
@@ -124,11 +142,13 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedBuscarRoute: typeof AuthenticatedBuscarRoute
   AuthenticatedCadastroPlacaRoute: typeof AuthenticatedCadastroPlacaRoute
+  AuthenticatedFotosEntryIdRoute: typeof AuthenticatedFotosEntryIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBuscarRoute: AuthenticatedBuscarRoute,
   AuthenticatedCadastroPlacaRoute: AuthenticatedCadastroPlacaRoute,
+  AuthenticatedFotosEntryIdRoute: AuthenticatedFotosEntryIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
