@@ -68,7 +68,7 @@ function BuscarPage() {
       const { product, fipe_data } = busca.data;
       const open = hasOpenEntry(busca.data);
       const mode: "edit" | "reentry" = open ? "edit" : "reentry";
-      const wiz = emptyWizard(placa, mode);
+      const wiz = emptyWizard(navPlate || product.plate, mode);
       wiz.productId = product.uuid;
       wiz.plate = product.plate;
       wiz.chassis = product.chassis ?? "";
@@ -95,7 +95,7 @@ function BuscarPage() {
 
       // edit = pula direto para passo 3 (operacional já preenchido) e segue
       // reentry = também passo 3, mas operacional editável vindo da última saída
-      navigate({ to: "/cadastro/$placa", params: { placa }, search: { step: 3 } });
+      navigate({ to: "/cadastro/$placa", params: { placa: navPlate || product.plate }, search: { step: 3 } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
     } finally {
