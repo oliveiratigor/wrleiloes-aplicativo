@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { signOut } from "@/lib/auth";
 import { useAuth } from "@/hooks/use-auth";
-import { buscarProduto, hasOpenEntry } from "@/lib/api/buscar";
+import { buscarProduto, detectIdentifier, hasOpenEntry } from "@/lib/api/buscar";
 import { consultaVeiculo } from "@/lib/api/consulta";
 import { saveWizard, emptyWizard, type WizardState } from "@/lib/wizard-state";
 
@@ -27,31 +27,48 @@ function BuscarPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const id = detectIdentifier(query);
+    if (id.kind === "invalid") {
+      setError(id.reason);
+      return;
+    }
     setLoading(true);
-    const placa = query.trim().toUpperCase();
     try {
+      const buscarPayload = id.kind === "plate" ? { plate: id.plate } : { renavam: id.renavam };
       const [busca, consulta] = await Promise.all([
-        buscarProduto({ plate: placa, chassis: placa }),
-        consultaVeiculo({ plate: placa }),
+        buscarProduto(buscarPayload),
+        // WR API só aceita placa/chassi — pula em renavam puro
+        id.kind === "plate"
+          ? consultaVeiculo({ plate: id.plate })
+          : Promise.resolve({ data: null, error: null }),
       ]);
       if (busca.error) {
         setError(busca.error);
         return;
       }
 
+      // Placa de navegação: prioriza o que o backend devolveu; senão usa o input (só placa)
+      const navPlate = (busca.data && "product" in busca.data
+        ? busca.data.product.plate
+        : id.kind === "plate" ? id.plate : "") || "";
+
       // Não encontrado → novo cadastro, pré-preenchido pela consulta WR
       if (!busca.found || !busca.data) {
-        const wiz = emptyWizard(placa, "new");
+        if (id.kind !== "plate") {
+          setError("Renavam não encontrado. Para novo cadastro, busque pela placa.");
+          return;
+        }
+        const wiz = emptyWizard(id.plate, "new");
         if (consulta.data) applyConsulta(wiz, consulta.data);
         saveWizard(wiz);
-        navigate({ to: "/cadastro/$placa", params: { placa }, search: { step: 2 } });
+        navigate({ to: "/cadastro/$placa", params: { placa: id.plate }, search: { step: 2 } });
         return;
       }
 
       const { product, fipe_data } = busca.data;
       const open = hasOpenEntry(busca.data);
       const mode: "edit" | "reentry" = open ? "edit" : "reentry";
-      const wiz = emptyWizard(placa, mode);
+      const wiz = emptyWizard(navPlate || product.plate, mode);
       wiz.productId = product.uuid;
       wiz.plate = product.plate;
       wiz.chassis = product.chassis ?? "";
@@ -78,7 +95,7 @@ function BuscarPage() {
 
       // edit = pula direto para passo 3 (operacional já preenchido) e segue
       // reentry = também passo 3, mas operacional editável vindo da última saída
-      navigate({ to: "/cadastro/$placa", params: { placa }, search: { step: 3 } });
+      navigate({ to: "/cadastro/$placa", params: { placa: navPlate || product.plate }, search: { step: 3 } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
     } finally {
@@ -101,16 +118,16 @@ function BuscarPage() {
       </div>
       <Card className="mx-auto max-w-md">
         <CardHeader>
-          <CardTitle className="text-base">Placa ou chassi</CardTitle>
+          <CardTitle className="text-base">Placa ou renavam</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="q">Identificador</Label>
+              <Label htmlFor="q">Placa ou renavam</Label>
               <Input
                 id="q"
                 autoFocus
-                placeholder="ABC1D23"
+                placeholder="ABC1D23 ou 12345678901"
                 value={query}
                 onChange={(e) => setQuery(e.target.value.toUpperCase())}
                 required

@@ -8,6 +8,27 @@ export type BuscarInput = {
   renavam?: string;
 };
 
+/**
+ * Identifica se o valor digitado é placa (Mercosul ou antiga) ou renavam.
+ * Retorna campos mutuamente exclusivos para casar com a cascata if/else if
+ * do edge `buscar-produto` (chassis > renavam > plate). No app só usamos
+ * placa ou renavam.
+ */
+export function detectIdentifier(raw: string):
+  | { kind: "plate"; plate: string }
+  | { kind: "renavam"; renavam: string }
+  | { kind: "invalid"; reason: string } {
+  const value = raw.trim().toUpperCase().replace(/[\s-]/g, "");
+  if (!value) return { kind: "invalid", reason: "Informe uma placa ou renavam." };
+  // renavam: só dígitos, 9 a 11 caracteres
+  if (/^\d{9,11}$/.test(value)) return { kind: "renavam", renavam: value };
+  // placa Mercosul: AAA0A00  |  antiga: AAA0000
+  if (/^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(value) || /^[A-Z]{3}\d{4}$/.test(value)) {
+    return { kind: "plate", plate: value };
+  }
+  return { kind: "invalid", reason: "Placa ou renavam inválido." };
+}
+
 export async function buscarProduto(input: BuscarInput): Promise<{
   found: boolean;
   data: Extract<BuscarProdutoResponse, { product: unknown }> | null;

@@ -59,8 +59,8 @@ export type BuscarProdutoResponse =
       };
       fipe_data: {
         fipe_codigo: string | null;
-        model: string | null;
-        brand: string | null;
+        model: string | null; // FIPE model code (não é o nome)
+        brand: string | null; // FIPE brand code (não é o nome — não casa com tabela brands)
         year: string | null;
         fuel: string | null;
         price: number | null;

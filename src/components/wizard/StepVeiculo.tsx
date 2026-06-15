@@ -65,6 +65,11 @@ export function StepVeiculo({
             value={data.brand}
             onChange={(v) => update({ brand: v })}
           />
+          {data.brand && !marcas.some((m) => m.value === data.brand) && (
+            <p className="mt-1 text-[11px] text-amber-600">
+              Marca "{data.brand}" não cadastrada — selecione uma opção.
+            </p>
+          )}
         </Field>
         <Field label="Modelo">
           <Input
