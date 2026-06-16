@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
+import { FormField } from "@/components/shared/FormField";
 import {
   filiaisQueryFor,
   depositosQuery,
@@ -43,13 +43,13 @@ export function StepEntrada({
   }, [data.branchId, isAdmin, filiais]);
 
   return (
-    <div className="space-y-4">
-      <Field
+    <div className="space-y-5">
+      <FormField
         label={
           <span className="flex items-center gap-2">
             Filial *
             {branchLocked && (
-              <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+              <Badge variant="secondary" className="h-4 px-1 text-[10px] normal-case tracking-normal">
                 Filial fixa do usuário
               </Badge>
             )}
@@ -79,38 +79,28 @@ export function StepEntrada({
             </AlertDescription>
           </Alert>
         )}
-      </Field>
-      <Field label="Depósito">
+      </FormField>
+      <FormField label="Depósito">
         <SearchableSelect
           options={depositos}
           value={data.depositId}
           onChange={(v) => update({ depositId: v })}
         />
-      </Field>
-      <Field label="Comitente">
+      </FormField>
+      <FormField label="Comitente">
         <SearchableSelect
           options={comitentes}
           value={data.principalId}
           onChange={(v) => update({ principalId: v })}
         />
-      </Field>
-      <Field label="Tipo de entrada">
+      </FormField>
+      <FormField label="Tipo de entrada">
         <SearchableSelect
           options={tiposEntrada}
           value={data.entryTypeId}
           onChange={(v) => update({ entryTypeId: v })}
         />
-      </Field>
-    </div>
-
-  );
-}
-
-function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">{label}</Label>
-      {children}
+      </FormField>
     </div>
   );
 }
