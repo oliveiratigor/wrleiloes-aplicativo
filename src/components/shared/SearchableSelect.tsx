@@ -65,9 +65,9 @@ export function SearchableSelect({
   );
 
   const list = (
-    <Command>
+    <Command className="h-full">
       <CommandInput placeholder="Buscar…" />
-      <CommandList className={isMobile ? "max-h-[60vh]" : undefined}>
+      <CommandList className={isMobile ? "max-h-none flex-1" : undefined}>
         <CommandEmpty>{emptyText}</CommandEmpty>
         <CommandGroup>
           {options.map((o) => (
@@ -98,11 +98,13 @@ export function SearchableSelect({
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-        <DrawerContent className="max-h-[85vh]">
+        <DrawerContent className="h-[50vh]">
           <DrawerHeader className="pb-2">
             <DrawerTitle className="text-base">{title ?? placeholder}</DrawerTitle>
           </DrawerHeader>
-          <div className="px-2 pb-[env(safe-area-inset-bottom)]">{list}</div>
+          <div className="flex-1 min-h-0 px-2 pb-[env(safe-area-inset-bottom)]">
+            {list}
+          </div>
         </DrawerContent>
       </Drawer>
     );
