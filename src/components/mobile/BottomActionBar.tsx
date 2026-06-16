@@ -3,13 +3,26 @@ import { cn } from "@/lib/utils";
 export function BottomActionBar({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="sticky bottom-0 left-0 right-0 z-30 border-t border-border bg-white/90 backdrop-blur-md"
+      className="border-t border-border"
       style={{
+        background: "rgba(255, 255, 255, 0.85)",
+        backdropFilter: "saturate(140%) blur(16px)",
         boxShadow: "var(--shadow-bar)",
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="mx-auto flex max-w-md gap-2 px-7 py-3">{children}</div>
+      <div
+        className="mx-auto flex max-w-md items-center gap-2"
+        style={{
+          minHeight: "var(--bottom-bar-height)",
+          paddingLeft: "var(--page-padding)",
+          paddingRight: "var(--page-padding)",
+          paddingTop: "12px",
+          paddingBottom: "12px",
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }

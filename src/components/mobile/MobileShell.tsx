@@ -12,30 +12,44 @@ export function MobileShell({
   className?: string;
 }) {
   return (
-    <div className="min-h-dvh bg-white">
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-white">
-        {topbar}
+    <div className="bg-white" style={{ height: "100dvh", overflow: "hidden" }}>
+      <div
+        className="relative mx-auto max-w-md bg-white"
+        style={{ height: "100dvh" }}
+      >
         <main
-          className={cn(
-            "flex-1 px-7 pt-8 pb-6",
-            topbar && "-mt-6 rounded-t-[28px] bg-white",
-            bottom && "pb-28",
-            className,
-          )}
+          className={cn("no-scrollbar h-full overflow-y-auto", className)}
           style={{
-            boxShadow: topbar
-              ? "0 -8px 24px rgba(15, 23, 42, 0.06)"
-              : undefined,
+            paddingTop: topbar
+              ? "var(--header-height)"
+              : "env(safe-area-inset-top)",
             paddingBottom: bottom
-              ? "calc(7rem + env(safe-area-inset-bottom))"
-              : "calc(1.5rem + env(safe-area-inset-bottom))",
+              ? "calc(var(--bottom-bar-height) + env(safe-area-inset-bottom))"
+              : "env(safe-area-inset-bottom)",
           }}
         >
-          {children}
+          <div
+            style={{
+              paddingLeft: "var(--page-padding)",
+              paddingRight: "var(--page-padding)",
+              paddingTop: "var(--space-5)",
+              paddingBottom: "var(--space-5)",
+            }}
+          >
+            {children}
+          </div>
         </main>
-        {bottom}
+
+        {topbar && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
+            <div className="pointer-events-auto">{topbar}</div>
+          </div>
+        )}
+
+        {bottom && (
+          <div className="absolute inset-x-0 bottom-0 z-30">{bottom}</div>
+        )}
       </div>
     </div>
   );
 }
-
