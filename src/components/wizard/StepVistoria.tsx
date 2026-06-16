@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Button } from "@/components/ui/button";
 import { FormField, formFieldClass, formTextareaClass } from "@/components/shared/FormField";
 import { verificationStatusQuery } from "@/lib/api/lookups";
 import type { VerificationStatus } from "@/lib/api/types";
@@ -141,30 +142,31 @@ export function StepVistoria({
       )}
 
       <Section title="Aprovação final">
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant={form.finalApproval === "approved" ? "default" : "outline"}
-            onClick={() => setForm({ ...form, finalApproval: "approved" })}
-            className="flex-1"
+        <div className="grid grid-cols-2 gap-3">
+          <ApprovalButton
+            active={form.finalApproval === "approved"}
+            tone="approve"
+            onClick={() =>
+              setForm({
+                ...form,
+                finalApproval: form.finalApproval === "approved" ? "" : "approved",
+              })
+            }
           >
-            Aprovar
-          </Button>
-          <Button
-            type="button"
-            variant={form.finalApproval === "rejected" ? "destructive" : "outline"}
-            onClick={() => setForm({ ...form, finalApproval: "rejected" })}
-            className="flex-1"
+            <Check className="h-4 w-4" /> Aprovar
+          </ApprovalButton>
+          <ApprovalButton
+            active={form.finalApproval === "rejected"}
+            tone="reject"
+            onClick={() =>
+              setForm({
+                ...form,
+                finalApproval: form.finalApproval === "rejected" ? "" : "rejected",
+              })
+            }
           >
-            Reprovar
-          </Button>
-          <Button
-            type="button"
-            variant={form.finalApproval === "" ? "secondary" : "outline"}
-            onClick={() => setForm({ ...form, finalApproval: "" })}
-          >
-            Pendente
-          </Button>
+            <X className="h-4 w-4" /> Reprovar
+          </ApprovalButton>
         </div>
         {form.finalApproval === "rejected" && (
           <>
@@ -283,5 +285,34 @@ function RadioList({
         </label>
       ))}
     </RadioGroup>
+  );
+}
+
+function ApprovalButton({
+  active,
+  tone,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  tone: "approve" | "reject";
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  const activeClass =
+    tone === "approve"
+      ? "border-emerald-600 bg-emerald-600 text-white shadow-[0_8px_20px_rgba(5,150,105,0.25)]"
+      : "border-red-600 bg-red-600 text-white shadow-[0_8px_20px_rgba(220,38,38,0.25)]";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white text-[15px] font-semibold text-foreground transition-all active:scale-[0.985]",
+        active && activeClass,
+      )}
+    >
+      {children}
+    </button>
   );
 }
