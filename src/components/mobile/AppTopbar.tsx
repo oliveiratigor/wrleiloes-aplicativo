@@ -1,4 +1,5 @@
 import { LogOut } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { signOut } from "@/lib/auth";
 import { useAuth } from "@/hooks/use-auth";
 import wrLogo from "@/assets/wr-logo.svg";
@@ -10,7 +11,17 @@ export function AppTopbar({
   subtitle?: string;
 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const greeting = user?.name ? `Olá, ${firstName(user.name)}` : "Olá";
+
+  async function handleSignOut() {
+    try {
+      await signOut();
+    } finally {
+      navigate({ to: "/auth", replace: true });
+    }
+  }
+
   return (
     <header
       className="relative flex flex-col px-7 pb-10 pt-12 text-white"
@@ -27,7 +38,7 @@ export function AppTopbar({
         />
         <button
           type="button"
-          onClick={() => signOut()}
+          onClick={handleSignOut}
           className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/10 transition hover:bg-white/20 active:bg-white/30"
           aria-label="Sair"
         >
