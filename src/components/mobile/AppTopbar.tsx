@@ -2,9 +2,9 @@ import { LogOut } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { signOut } from "@/lib/auth";
 import { useAuth } from "@/hooks/use-auth";
+import wrLogo from "@/assets/wr-logo.png.asset.json";
 
 export function AppTopbar({
-  title,
   subtitle,
 }: {
   title?: string;
@@ -16,19 +16,16 @@ export function AppTopbar({
       className="bg-[color:var(--primary-dark)] text-white"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="flex items-center justify-between gap-3 px-4 py-3.5">
-        <Link to="/buscar" className="flex min-w-0 items-center gap-2.5">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/15 text-sm font-black tracking-tight">
-            WR
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-[11px] font-medium uppercase tracking-wider text-white/70">
-              {title ?? "WR Leilões"}
-            </p>
-            <p className="truncate text-sm font-semibold">
-              {subtitle ?? (user?.name ? `Olá, ${firstName(user.name)}` : "Operação")}
-            </p>
-          </div>
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <Link to="/buscar" className="flex min-w-0 items-center gap-3">
+          <img
+            src={wrLogo.url}
+            alt="WR Leilões"
+            className="h-8 w-auto shrink-0"
+          />
+          <p className="truncate text-sm font-semibold text-white/90">
+            {subtitle ?? (user?.name ? `Olá, ${firstName(user.name)}` : "Operação")}
+          </p>
         </Link>
         <button
           type="button"
@@ -46,3 +43,4 @@ export function AppTopbar({
 function firstName(name: string) {
   return name.trim().split(/\s+/)[0] ?? name;
 }
+

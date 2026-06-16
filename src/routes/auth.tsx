@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BottomBarButton } from "@/components/mobile/BottomActionBar";
 import { applySession, loginWithPassword, loginWithTotp, rememberIdentity } from "@/lib/auth";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import wrLogo from "@/assets/wr-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -82,11 +83,12 @@ function AuthPage() {
           className="relative bg-gradient-to-br from-[color:var(--primary-dark)] to-primary px-6 pb-20 pt-16 text-white"
           style={{ paddingTop: "calc(env(safe-area-inset-top) + 4rem)" }}
         >
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/15 text-xl font-black tracking-tight">
-            WR
-          </div>
-          <h1 className="mt-5 text-3xl font-black leading-tight">WR Leilões</h1>
-          <p className="mt-2 max-w-xs text-sm font-medium text-white/80">
+          <img
+            src={wrLogo.url}
+            alt="WR Leilões"
+            className="h-12 w-auto"
+          />
+          <p className="mt-5 max-w-xs text-sm font-medium text-white/85">
             Operação de pátio e vistoria veicular.
           </p>
         </div>
