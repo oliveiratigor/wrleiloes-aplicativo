@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedBuscarRouteImport } from './routes/_authenticated/buscar'
 import { Route as AuthenticatedCadastroPlacaRouteImport } from './routes/_authenticated/cadastro.$placa'
+import { Route as AuthenticatedCadastroPlacaIndexRouteImport } from './routes/_authenticated/cadastro.$placa.index'
 import { Route as AuthenticatedCadastroPlacaSucessoRouteImport } from './routes/_authenticated/cadastro.$placa.sucesso'
 
 const AuthRoute = AuthRouteImport.update({
@@ -41,6 +42,12 @@ const AuthenticatedCadastroPlacaRoute =
     path: '/cadastro/$placa',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedCadastroPlacaIndexRoute =
+  AuthenticatedCadastroPlacaIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedCadastroPlacaRoute,
+  } as any)
 const AuthenticatedCadastroPlacaSucessoRoute =
   AuthenticatedCadastroPlacaSucessoRouteImport.update({
     id: '/sucesso',
@@ -54,13 +61,14 @@ export interface FileRoutesByFullPath {
   '/buscar': typeof AuthenticatedBuscarRoute
   '/cadastro/$placa': typeof AuthenticatedCadastroPlacaRouteWithChildren
   '/cadastro/$placa/sucesso': typeof AuthenticatedCadastroPlacaSucessoRoute
+  '/cadastro/$placa/': typeof AuthenticatedCadastroPlacaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/buscar': typeof AuthenticatedBuscarRoute
-  '/cadastro/$placa': typeof AuthenticatedCadastroPlacaRouteWithChildren
   '/cadastro/$placa/sucesso': typeof AuthenticatedCadastroPlacaSucessoRoute
+  '/cadastro/$placa': typeof AuthenticatedCadastroPlacaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/_authenticated/buscar': typeof AuthenticatedBuscarRoute
   '/_authenticated/cadastro/$placa': typeof AuthenticatedCadastroPlacaRouteWithChildren
   '/_authenticated/cadastro/$placa/sucesso': typeof AuthenticatedCadastroPlacaSucessoRoute
+  '/_authenticated/cadastro/$placa/': typeof AuthenticatedCadastroPlacaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -79,13 +88,14 @@ export interface FileRouteTypes {
     | '/buscar'
     | '/cadastro/$placa'
     | '/cadastro/$placa/sucesso'
+    | '/cadastro/$placa/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/buscar'
-    | '/cadastro/$placa'
     | '/cadastro/$placa/sucesso'
+    | '/cadastro/$placa'
   id:
     | '__root__'
     | '/'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
     | '/_authenticated/buscar'
     | '/_authenticated/cadastro/$placa'
     | '/_authenticated/cadastro/$placa/sucesso'
+    | '/_authenticated/cadastro/$placa/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -139,6 +150,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCadastroPlacaRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/cadastro/$placa/': {
+      id: '/_authenticated/cadastro/$placa/'
+      path: '/'
+      fullPath: '/cadastro/$placa/'
+      preLoaderRoute: typeof AuthenticatedCadastroPlacaIndexRouteImport
+      parentRoute: typeof AuthenticatedCadastroPlacaRoute
+    }
     '/_authenticated/cadastro/$placa/sucesso': {
       id: '/_authenticated/cadastro/$placa/sucesso'
       path: '/sucesso'
@@ -151,12 +169,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedCadastroPlacaRouteChildren {
   AuthenticatedCadastroPlacaSucessoRoute: typeof AuthenticatedCadastroPlacaSucessoRoute
+  AuthenticatedCadastroPlacaIndexRoute: typeof AuthenticatedCadastroPlacaIndexRoute
 }
 
 const AuthenticatedCadastroPlacaRouteChildren: AuthenticatedCadastroPlacaRouteChildren =
   {
     AuthenticatedCadastroPlacaSucessoRoute:
       AuthenticatedCadastroPlacaSucessoRoute,
+    AuthenticatedCadastroPlacaIndexRoute: AuthenticatedCadastroPlacaIndexRoute,
   }
 
 const AuthenticatedCadastroPlacaRouteWithChildren =

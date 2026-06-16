@@ -1,39 +1,22 @@
-## Objetivo
+## Causa
 
-Permitir avançar da Etapa 3 (Fotos) para a Etapa 4 (Vistoria) sem precisar enviar fotos, apenas para validar o restante do fluxo do cadastro. Mudança pontual, reversível e isolada — sem mexer em rotas, auth, schemas ou regras de negócio.
+`src/routes/_authenticated/cadastro.$placa.tsx` virou rota-pai de `cadastro.$placa.sucesso.tsx` por causa do file-based routing (dot-naming cria relação pai/filho). Como o arquivo pai renderiza o wizard inteiro em vez de `<Outlet />`, ao acessar `/cadastro/THA1988/sucesso` o TanStack monta a página pai (o wizard volta para "Etapa 1 de 4 — Veículo") e a tela de sucesso nunca aparece. A URL muda corretamente, mas visualmente parece que "voltou pra home".
 
-## O que muda
+## Correção
 
-Habilitar o botão **"Ir para vistoria"** mesmo quando nenhuma foto obrigatória foi enviada, atrás de uma flag de bypass controlada por env var.
+Separar layout e leaf:
 
-- Flag: `VITE_BYPASS_FOTOS_REQUIRED` (default `false`).
-- Quando `true`:
-  - O `StepFotos` reporta `onAllRequiredDone(true)` independente do estado dos slots.
-  - O card mostra um aviso discreto ("Bypass de fotos ativo — somente para testes") para deixar claro que está em modo de teste.
-- Quando `false` (produção/default): comportamento atual, nada muda.
+1. Renomear o arquivo atual do wizard para um leaf:
+   - `cadastro.$placa.tsx` → `cadastro.$placa.index.tsx` (mantém todo o conteúdo do wizard; só a string em `createFileRoute` muda para `/_authenticated/cadastro/$placa/`).
 
-Nenhuma foto fake é inserida no banco. A entrada simplesmente segue para a vistoria sem mídia associada.
+2. Criar um novo `cadastro.$placa.tsx` minimalista que serve apenas como layout:
+   ```tsx
+   import { createFileRoute, Outlet } from "@tanstack/react-router";
+   export const Route = createFileRoute("/_authenticated/cadastro/$placa")({
+     component: () => <Outlet />,
+   });
+   ```
 
-## Arquivos afetados
+3. `cadastro.$placa.sucesso.tsx` continua igual — agora renderiza dentro do `<Outlet />` do layout.
 
-- `src/components/wizard/StepFotos.tsx` — leitura da flag + override do `onAllRequiredDone` + banner de aviso quando ativo.
-- `.env` (local) — adicionar `VITE_BYPASS_FOTOS_REQUIRED=true` para a sessão de teste.
-
-## Como ligar/desligar
-
-- Ligar: setar `VITE_BYPASS_FOTOS_REQUIRED=true` e reiniciar o dev server.
-- Desligar: remover a variável (ou setar `false`). O fluxo volta ao normal automaticamente.
-
-## Fora do escopo
-
-- Não altera o `StepVistoria`, gating do wizard ou `productEntries`.
-- Não cria fotos fictícias no Storage/DB.
-- Não toca em RLS, edge functions ou rotas.
-
-## Validação
-
-1. Com a flag ativa, abrir `/cadastro/THA1988?step=3`: o botão "Ir para vistoria" fica habilitado mesmo com 0/20 fotos e aparece o banner de bypass.
-2. Avançar para Etapa 4 e validar o restante do fluxo (Vistoria).
-3. Desligar a flag e confirmar que o botão volta a exigir as fotos obrigatórias.
-
-Posso aplicar?
+Sem mudanças em business logic, navegação ou no `finishVistoria`. Depois, validar abrindo `/cadastro/THA1988/sucesso?mode=edit&approval=approved` no preview e refazendo um fluxo completo até "Concluir".
