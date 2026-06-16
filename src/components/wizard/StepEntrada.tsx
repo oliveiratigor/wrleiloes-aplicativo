@@ -1,8 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
@@ -14,6 +12,7 @@ import {
 } from "@/lib/api/lookups";
 import { useAuth } from "@/hooks/use-auth";
 import type { WizardState } from "@/lib/wizard-state";
+
 
 export function StepEntrada({
   data,
@@ -104,38 +103,8 @@ export function StepEntrada({
           onChange={(v) => update({ entryTypeId: v })}
         />
       </Field>
-      <div className="rounded-md border p-3 space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">Cobrar guincho</Label>
-          <Switch
-            checked={data.chargeTowing}
-            onCheckedChange={(v) => update({ chargeTowing: v })}
-          />
-        </div>
-        {data.chargeTowing && (
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="KM inicial">
-              <Input
-                inputMode="numeric"
-                value={data.kmInitial}
-                onChange={(e) =>
-                  update({ kmInitial: e.target.value.replace(/\D/g, "") })
-                }
-              />
-            </Field>
-            <Field label="KM final">
-              <Input
-                inputMode="numeric"
-                value={data.kmFinal}
-                onChange={(e) =>
-                  update({ kmFinal: e.target.value.replace(/\D/g, "") })
-                }
-              />
-            </Field>
-          </div>
-        )}
-      </div>
     </div>
+
   );
 }
 
