@@ -1,45 +1,18 @@
-## Refatorar tela de login no estilo da referência
+## Ajustes finos na tela de login
 
-Ajustar `src/routes/auth.tsx` para o visual da imagem enviada: header vermelho ocupando o topo, e um card branco grande ocupando a largura total da tela com cantos arredondados apenas no topo, sem fundo cinza ao redor.
+Edições em `src/routes/auth.tsx`:
 
-### Mudanças
+1. **Cantos arredondados visíveis** — aumentar o raio e o overlap do card sobre o header para que a curvatura apareça com clareza:
+   - `rounded-t-[28px]` (mantém) + `-mt-6` (sobreposição menor mas garantida)
+   - garantir que não há `overflow-hidden` num ancestral cortando
 
-1. **Container externo**: remover `bg-[#F4F5F7]` e o `max-w-md`. O wrapper passa a ser apenas `min-h-dvh bg-white flex flex-col`. O card branco encosta nas bordas laterais da tela.
+2. **Logo 30% menor** — `h-12` (48px) → `h-9` (36px).
 
-2. **Header vermelho**: mantém o gradiente atual (`linear-gradient(160deg, #990E18, #C91826)`), padding lateral confortável (`px-7`), respeita `safe-area-inset-top`. Mantém logo + título "Acesse sua conta" + subtítulo. Reduzir o `pb` para ~`pb-20` para o card subir mais.
+3. **"Acesse sua conta" mais baixa, 40px do card** — reorganizar o header para empurrar título/subtítulo para perto do card:
+   - usar `flex flex-col` no header com o bloco de texto (título + subtítulo) com `mt-auto` (encosta no rodapé do header)
+   - header com `min-h-[300px]` e `pb-10` (40px) → subtítulo fica a 40px da borda do card branco
+   - logo fica no topo, texto fica no fundo do bloco vermelho
 
-3. **Card branco**:
-   - Largura total (sem `max-w-md`, sem `px-6` no `main`).
-   - Cantos arredondados apenas no topo: `rounded-t-[32px]`.
-   - Sobe sobre o header com margem negativa (`-mt-8`).
-   - Fundo branco sólido, sem borda lateral, sombra suave apenas no topo (`shadow-[0_-8px_24px_rgba(15,23,42,0.06)]`).
-   - Padding interno generoso (`px-6 pt-8 pb-10`).
-   - `flex-1` para preencher o resto da tela.
+4. **Respiro no topo do card** — `pt-8` → `pt-12` (48px) para "Entrar no sistema" não colar no topo.
 
-4. **Footer**: continua com `v1.0` centralizado, agora dentro do card branco (mesmo fundo), no rodapé via `mt-auto`.
-
-5. **Conteúdo dos campos / botão**: sem alterações funcionais. Apenas o invólucro muda.
-
-Nada de lógica de autenticação é tocado.
-
-### Resultado visual
-
-```text
-┌─────────────────────────┐
-│  [gradiente vermelho]   │
-│   Logo                  │
-│   Acesse sua conta      │
-│   subtítulo             │
-│ ╭─────────────────────╮ │ ← card branco, largura total,
-│ │  E-MAIL             │ │   cantos arredondados só no topo
-│ │  [input]            │ │
-│ │  SENHA              │ │
-│ │  [input]            │ │
-│ │                     │ │
-│ │  [  Entrar  ]       │ │
-│ │  Esqueci minha senha│ │
-│ │                     │ │
-│ │           v1.0      │ │
-│ ╰─────────────────────╯ │
-└─────────────────────────┘
-```
+Sem alterações de lógica.

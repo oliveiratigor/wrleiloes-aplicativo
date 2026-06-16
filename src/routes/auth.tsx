@@ -89,7 +89,7 @@ function AuthPage() {
     <div className="flex min-h-dvh flex-col bg-white">
       {/* Header vermelho premium */}
       <header
-        className="relative px-7 pb-20 pt-14 text-white"
+        className="relative flex min-h-[300px] flex-col px-7 pb-10 pt-14 text-white"
         style={{
           background: "linear-gradient(160deg, #990E18 0%, #C91826 100%)",
           paddingTop: "calc(env(safe-area-inset-top) + 3.5rem)",
@@ -98,21 +98,24 @@ function AuthPage() {
         <img
           src={wrLogo}
           alt="WR Leilões"
-          className="h-12 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+          className="h-9 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
         />
-        <h1 className="mt-7 text-2xl font-bold leading-tight tracking-tight">
-          Acesse sua conta
-        </h1>
-        <p className="mt-2 text-sm font-medium text-white/[0.82]">
-          Pátio, vistoria e conferência veicular.
-        </p>
+        <div className="mt-auto pt-10">
+          <h1 className="text-2xl font-bold leading-tight tracking-tight">
+            Acesse sua conta
+          </h1>
+          <p className="mt-2 text-sm font-medium text-white/[0.82]">
+            Pátio, vistoria e conferência veicular.
+          </p>
+        </div>
       </header>
 
       {/* Card branco full-width */}
       <main
-        className="-mt-8 flex flex-1 flex-col rounded-t-[32px] bg-white px-6 pt-8 pb-10"
+        className="-mt-6 flex flex-1 flex-col rounded-t-[28px] bg-white px-6 pt-12 pb-10"
         style={{ boxShadow: "0 -8px 24px rgba(15, 23, 42, 0.06)" }}
       >
+
         <div className="mb-6">
           <h2 className="text-base font-bold text-foreground">
             {stage === "password" ? "Entrar no sistema" : "Verificação 2FA"}
