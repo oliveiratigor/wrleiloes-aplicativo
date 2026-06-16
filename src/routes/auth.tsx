@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BottomBarButton } from "@/components/mobile/BottomActionBar";
 import { applySession, loginWithPassword, loginWithTotp, rememberIdentity } from "@/lib/auth";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import wrLogo from "@/assets/wr-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
