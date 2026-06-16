@@ -53,8 +53,8 @@ export function SearchableSelect({
       aria-expanded={open}
       disabled={disabled}
       className={cn(
-        "w-full min-w-0 justify-between gap-2 rounded-md border-border bg-card font-normal shadow-none hover:bg-card",
-        !selected && "text-muted-foreground",
+        "h-14 w-full min-w-0 justify-between gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-4 text-[15px] font-normal text-foreground shadow-none transition-all hover:bg-white focus-visible:border-primary focus-visible:shadow-[0_0_0_4px_rgba(201,24,38,0.10)] focus-visible:outline-none focus-visible:ring-0 data-[state=open]:border-primary data-[state=open]:shadow-[0_0_0_4px_rgba(201,24,38,0.10)]",
+        !selected && "text-muted-foreground/60",
       )}
     >
       <span className="flex-1 min-w-0 truncate text-left uppercase">
