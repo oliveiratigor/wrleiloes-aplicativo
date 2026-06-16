@@ -1,15 +1,22 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MobileShell } from "@/components/mobile/MobileShell";
+import { AppTopbar } from "@/components/mobile/AppTopbar";
+import { BottomActionBar, BottomBarButton } from "@/components/mobile/BottomActionBar";
+import { StatusBadge } from "@/components/mobile/StatusBadge";
 import { Stepper } from "@/components/wizard/Stepper";
 import { StepVeiculo } from "@/components/wizard/StepVeiculo";
 import { StepEntrada } from "@/components/wizard/StepEntrada";
 import { StepFotos } from "@/components/wizard/StepFotos";
-import { StepVistoria, emptyVistoria, type VistoriaForm } from "@/components/wizard/StepVistoria";
+import {
+  StepVistoria,
+  emptyVistoria,
+  type VistoriaForm,
+} from "@/components/wizard/StepVistoria";
 import {
   clearWizard,
   emptyWizard,
@@ -24,7 +31,6 @@ import { buscarProduto } from "@/lib/api/buscar";
 import { toast } from "sonner";
 
 const STEPS = [
-  { id: 1, label: "Busca" },
   { id: 2, label: "Veículo" },
   { id: 3, label: "Entrada" },
   { id: 4, label: "Fotos" },
@@ -32,7 +38,7 @@ const STEPS = [
 ];
 
 const searchSchema = z.object({
-  step: z.coerce.number().min(1).max(5).catch(2),
+  step: z.coerce.number().min(2).max(5).catch(2),
 });
 
 export const Route = createFileRoute("/_authenticated/cadastro/$placa")({
@@ -47,18 +53,18 @@ function CadastroPage() {
   const navigate = useNavigate();
   const { user, account } = useAuth();
 
-  const [data, setData] = useState<WizardState>(() => loadWizard(placa) ?? emptyWizard(placa));
+  const [data, setData] = useState<WizardState>(
+    () => loadWizard(placa) ?? emptyWizard(placa),
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requiredOk, setRequiredOk] = useState(false);
   const [vistoria, setVistoria] = useState<VistoriaForm>(emptyVistoria);
 
-  // Persiste a cada mudança
   useEffect(() => {
     saveWizard(data);
   }, [data]);
 
-  // Hidrata vistoria quando há entrada aberta
   useEffect(() => {
     if (!data.productId) return;
     let cancelled = false;
@@ -105,10 +111,19 @@ function CadastroPage() {
     });
   }
 
+  const status = useMemo(() => {
+    if (data.mode === "edit")
+      return { tone: "success" as const, label: "Encontrado" };
+    if (data.mode === "reentry")
+      return { tone: "warning" as const, label: "Reentrada" };
+    return { tone: "muted" as const, label: "Novo cadastro" };
+  }, [data.mode]);
+
   const subtitle = useMemo(() => {
     if (data.mode === "edit") return "Entrada em aberto — editando";
-    if (data.mode === "reentry") return "Reentrada — operacional herdado da última saída";
-    return "Novo cadastro";
+    if (data.mode === "reentry")
+      return "Dados operacionais herdados da última saída";
+    return "Cadastrar veículo do zero";
   }, [data.mode]);
 
   async function saveStep3() {
@@ -125,7 +140,7 @@ function CadastroPage() {
     const res = await cadastrarProduto({
       user_data: { uuid: user.uuid, account_uuid: user.account_uuid ?? undefined },
       product: {
-        uuid: data.mode === "edit" ? data.productId : data.productId, // backend reusa por placa
+        uuid: data.productId,
         plate: data.plate,
         chassis: data.chassis || null,
         renavam: data.renavam || null,
@@ -138,9 +153,9 @@ function CadastroPage() {
         deposit_uuid: data.depositId || null,
         consignor_uuid: data.principalId || null,
         entry_type_uuid: data.entryTypeId || null,
-        charge_towing: data.chargeTowing,
-        km_initial: data.kmInitial ? Number(data.kmInitial) : null,
-        km_final: data.kmFinal ? Number(data.kmFinal) : null,
+        charge_towing: false,
+        km_initial: null,
+        km_final: null,
       },
       fipe_data: {
         brand: data.brand || null,
@@ -153,7 +168,9 @@ function CadastroPage() {
     setSaving(false);
     if (!res.ok) {
       if (res.code === "OPEN_ENTRY_EXISTS") {
-        setError("Já existe entrada aberta para este veículo. Volte à busca e abra como edição.");
+        setError(
+          "Já existe entrada aberta para este veículo. Volte à busca e abra como edição.",
+        );
       } else {
         setError(`${res.code}: ${res.message}`);
       }
@@ -182,15 +199,14 @@ function CadastroPage() {
         engineDiscrepancies: [...vistoria.engineDivs],
         chassisDiscrepancies: [...vistoria.chassisDivs],
         rejectionReasons:
-          vistoria.finalApproval === "rejected" ? [...vistoria.rejectionReasons] : [],
+          vistoria.finalApproval === "rejected"
+            ? [...vistoria.rejectionReasons]
+            : [],
         initialConditionUuid: vistoria.initialCondition || null,
         finalClassificationUuid: vistoria.finalClassification || null,
         finalApproval: vistoria.finalApproval || null,
         rejectionNotes: vistoria.rejectionNotes || null,
         notes: vistoria.notes || null,
-        chargeTow: data.chargeTowing,
-        kmInitial: data.kmInitial ? Number(data.kmInitial) : null,
-        kmFinal: data.kmFinal ? Number(data.kmFinal) : null,
       });
       clearWizard(data.plate);
       toast.success("Vistoria concluída");
@@ -202,30 +218,100 @@ function CadastroPage() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="mx-auto max-w-md pb-3">
-        <Link to="/buscar" className="text-sm text-muted-foreground hover:underline">
-          ← Voltar para busca
-        </Link>
-      </div>
-      <Card className="mx-auto max-w-md">
-        <CardHeader className="space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-base">{placa}</CardTitle>
-              <p className="text-xs text-muted-foreground">{subtitle}</p>
-            </div>
-          </div>
-          <Stepper steps={STEPS} current={step} onJump={(id) => go(id)} />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+  const bottom = (
+    <BottomActionBar>
+      {step > 2 && (
+        <BottomBarButton variant="secondary" onClick={() => go(step - 1)}>
+          <ArrowLeft className="h-4 w-4" /> Voltar
+        </BottomBarButton>
+      )}
+      {step === 2 && (
+        <BottomBarButton onClick={() => go(3)}>Continuar</BottomBarButton>
+      )}
+      {step === 3 && (
+        <BottomBarButton
+          onClick={saveStep3}
+          disabled={saving || !data.branchId}
+        >
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Salvando…
+            </>
+          ) : (
+            "Salvar e continuar"
           )}
+        </BottomBarButton>
+      )}
+      {step === 4 && (
+        <BottomBarButton onClick={() => go(5)} disabled={!requiredOk}>
+          Ir para vistoria
+        </BottomBarButton>
+      )}
+      {step === 5 && (
+        <BottomBarButton
+          onClick={finishVistoria}
+          disabled={saving || !data.entryId}
+        >
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Salvando…
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="h-4 w-4" /> Concluir
+            </>
+          )}
+        </BottomBarButton>
+      )}
+    </BottomActionBar>
+  );
 
+  return (
+    <MobileShell topbar={<AppTopbar />} bottom={bottom}>
+      <div className="space-y-5">
+        {/* Header com placa */}
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/buscar" })}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Nova consulta
+          </button>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                Placa
+              </p>
+              <h1 className="font-mono text-3xl font-black tracking-[0.15em] text-foreground">
+                {placa}
+              </h1>
+              <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+            </div>
+            <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+          </div>
+        </div>
+
+        {/* Stepper */}
+        <div
+          className="rounded-xl border border-border bg-card p-3"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <Stepper steps={STEPS} current={step} onJump={(id) => go(id)} />
+        </div>
+
+        {error && (
+          <Alert variant="destructive" className="rounded-xl">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Conteúdo da etapa */}
+        <div
+          key={step}
+          className="rounded-2xl border border-border bg-card p-4 animate-in fade-in slide-in-from-bottom-1 duration-200"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
           {step === 2 && (
             <Suspense fallback={<Skeleton className="h-64 w-full" />}>
               <StepVeiculo
@@ -234,43 +320,28 @@ function CadastroPage() {
                 preFilled={data.mode === "new" && !!data.brand}
                 lockIdentity={data.mode !== "new"}
               />
-              <NavButtons onNext={() => go(3)} />
             </Suspense>
           )}
 
           {step === 3 && (
             <Suspense fallback={<Skeleton className="h-48 w-full" />}>
               <StepEntrada data={data} update={update} />
-              <NavButtons
-                onBack={() => go(2)}
-                onNext={saveStep3}
-                nextLabel={saving ? "Salvando…" : "Salvar e continuar"}
-                disabled={saving || !data.branchId}
-              />
             </Suspense>
           )}
 
           {step === 4 && (
             <Suspense fallback={<Skeleton className="h-64 w-full" />}>
               {data.productId && data.entryId && account?.id ? (
-                <>
-                  <StepFotos
-                    productId={data.productId}
-                    entryId={data.entryId}
-                    accountId={account.id}
-                    onAllRequiredDone={setRequiredOk}
-                  />
-                  <NavButtons
-                    onBack={() => go(3)}
-                    onNext={() => go(5)}
-                    nextLabel="Ir para vistoria"
-                    disabled={!requiredOk}
-                  />
-                </>
+                <StepFotos
+                  productId={data.productId}
+                  entryId={data.entryId}
+                  accountId={account.id}
+                  onAllRequiredDone={setRequiredOk}
+                />
               ) : (
                 <Alert>
                   <AlertDescription>
-                    Salve o passo 3 primeiro para anexar fotos.
+                    Salve a etapa de entrada primeiro para anexar fotos.
                   </AlertDescription>
                 </Alert>
               )}
@@ -280,41 +351,10 @@ function CadastroPage() {
           {step === 5 && (
             <Suspense fallback={<Skeleton className="h-96 w-full" />}>
               <StepVistoria form={vistoria} setForm={setVistoria} />
-              <NavButtons
-                onBack={() => go(4)}
-                onNext={finishVistoria}
-                nextLabel={saving ? "Salvando…" : "Concluir"}
-                disabled={saving || !data.entryId}
-              />
             </Suspense>
           )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function NavButtons({
-  onBack,
-  onNext,
-  nextLabel = "Continuar",
-  disabled,
-}: {
-  onBack?: () => void;
-  onNext: () => void;
-  nextLabel?: string;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="flex gap-2 pt-2">
-      {onBack && (
-        <Button type="button" variant="outline" onClick={onBack} className="flex-1">
-          Voltar
-        </Button>
-      )}
-      <Button type="button" onClick={onNext} disabled={disabled} className="flex-1">
-        {nextLabel}
-      </Button>
-    </div>
+        </div>
+      </div>
+    </MobileShell>
   );
 }
