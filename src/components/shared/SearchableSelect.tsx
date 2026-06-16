@@ -61,6 +61,7 @@ export function SearchableSelect({
                 <CommandItem
                   key={o.value}
                   value={o.label}
+                  className="uppercase"
                   onSelect={() => {
                     onChange(o.value);
                     setOpen(false);
