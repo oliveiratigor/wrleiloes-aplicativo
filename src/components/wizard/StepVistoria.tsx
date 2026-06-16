@@ -64,6 +64,7 @@ export function StepVistoria({
         <div className="space-y-3">
           <Field label="Nº no veículo">
             <Input
+              className={formFieldClass}
               value={form.engineNumberVehicle}
               onChange={(e) =>
                 setForm({ ...form, engineNumberVehicle: e.target.value })
@@ -72,6 +73,7 @@ export function StepVistoria({
           </Field>
           <Field label="Nº na base">
             <Input
+              className={formFieldClass}
               value={form.engineNumberBase}
               onChange={(e) =>
                 setForm({ ...form, engineNumberBase: e.target.value })
@@ -92,6 +94,7 @@ export function StepVistoria({
         <div className="space-y-3">
           <Field label="Nº no veículo">
             <Input
+              className={formFieldClass}
               value={form.chassisNumberVehicle}
               onChange={(e) =>
                 setForm({ ...form, chassisNumberVehicle: e.target.value })
@@ -100,6 +103,7 @@ export function StepVistoria({
           </Field>
           <Field label="Nº na base">
             <Input
+              className={formFieldClass}
               value={form.chassisNumberBase}
               onChange={(e) =>
                 setForm({ ...form, chassisNumberBase: e.target.value })
@@ -173,6 +177,7 @@ export function StepVistoria({
             />
             <Field label="Motivo / observação obrigatória">
               <Textarea
+                className={formTextareaClass}
                 rows={2}
                 value={form.rejectionNotes}
                 onChange={(e) =>
@@ -187,6 +192,7 @@ export function StepVistoria({
 
       <Section title="Observações gerais">
         <Textarea
+                className={formTextareaClass}
           rows={3}
           value={form.notes}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
