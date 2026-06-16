@@ -2,7 +2,7 @@ import { LogOut } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { signOut } from "@/lib/auth";
 import { useAuth } from "@/hooks/use-auth";
-import wrLogo from "@/assets/wr-logo.png.asset.json";
+import wrLogo from "@/assets/wr-logo.svg";
 
 export function AppTopbar({
   subtitle,
