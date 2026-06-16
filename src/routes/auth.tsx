@@ -26,6 +26,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const router = useRouter();
+  const { redirect: redirectTo } = Route.useSearch();
   const [stage, setStage] = useState<"password" | "totp">("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,11 +35,20 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const goNext = () => {
+    if (redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")) {
+      router.history.replace(redirectTo);
+      return;
+    }
+    navigate({ to: "/buscar", replace: true });
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/buscar", replace: true });
+      if (data.session) goNext();
     });
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function submitPassword(e: React.FormEvent) {
     e.preventDefault();
