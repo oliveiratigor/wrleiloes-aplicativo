@@ -1,39 +1,21 @@
-## Header interno no estilo da tela de login
+## Etapa 5 (Vistoria) — layout mais fluido
 
-Aplicar o mesmo visual da `/auth` ao header das páginas internas (`/buscar`, `/cadastro/...`).
+Arquivo: `src/components/wizard/StepVistoria.tsx`
 
-### 1. `src/components/mobile/AppTopbar.tsx`
+### Mudanças
 
-Reescrever o componente para:
+1. **Remover o card aninhado** (`Section` com `rounded-md border p-3`).
+   - Substituir por um bloco simples: título como `h3` (mesmo estilo) + separação por espaço/divider sutil.
+   - Mantém um único card (o do wizard externo), eliminando o "card dentro de card".
 
-- **Gradiente vermelho** igual ao login: `linear-gradient(160deg, #990E18 0%, #C91826 100%)`.
-- **Layout em coluna**, respeitando `safe-area-inset-top`, com padding `px-7 pt-12 pb-10`.
-- **Topo**: linha com logo (`h-9 w-auto`, mesma do login) à esquerda + botão sair (ícone `LogOut` em `bg-white/10 rounded-xl h-10 w-10`) à direita.
-- **Bloco de saudação** abaixo: título elegante `Olá, Rafael` (`text-2xl font-bold tracking-tight`) + subtítulo opcional (default: "Bem-vindo de volta.") em `text-sm text-white/[0.82]`.
-- O componente continua aceitando `subtitle` opcional para sobrescrever a linha de baixo.
+2. **Campos full-width (col-12)**:
+   - Trocar `grid grid-cols-2 gap-3` (Motor e Chassi) por `space-y-3` — cada input "Nº no veículo" e "Nº na base" passa a ocupar 100% da largura, um abaixo do outro.
 
-### 2. `src/components/mobile/MobileShell.tsx`
+3. **Espaçamento geral**:
+   - `space-y-5` → `space-y-8` entre seções para dar respiro já que perderam a borda.
+   - Opcional: linha divisória `border-t border-border/60 pt-6` entre seções (exceto a primeira) para separação visual leve.
 
-Para que o card branco com cantos arredondados apareça igual ao login:
-
-- `bg-background` do wrapper externo → `bg-white` (não há mais fundo cinza).
-- O `<main>` ganha `-mt-6 rounded-t-[28px] bg-white` com sombra suave `0 -8px 24px rgba(15,23,42,0.06)` **somente quando há `topbar`**.
-- Aumentar `pt-4` → `pt-8` para dar respiro ao conteúdo logo abaixo da curva.
+4. Aplicar o mesmo padrão à seção "Aprovação final", "Condição inicial", "Classificação final" — todas perdem o card, viram blocos com título + conteúdo.
 
 ### Resultado
-
-Mesma identidade visual da tela de login:
-
-```text
-┌─────────────────────────┐
-│ [gradiente vermelho]    │
-│  WR LEILÕES        [⇥] │
-│                         │
-│  Olá, Rafael            │
-│  Bem-vindo de volta.    │
-│ ╭─────────────────────╮ │ ← card branco rounded-t
-│ │ Pesquisar veículo   │ │
-│ │ ...                 │ │
-```
-
-Nada de lógica é alterado, só apresentação.
+Um único card branco (vindo do wizard) contendo todas as seções, separadas por título e respiro, com inputs em largura total — mais fluido e leve.

@@ -59,9 +59,9 @@ export function StepVistoria({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="divide-y divide-border/60">
       <Section title="Motor">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           <Field label="Nº no veículo">
             <Input
               value={form.engineNumberVehicle}
@@ -89,7 +89,7 @@ export function StepVistoria({
       </Section>
 
       <Section title="Chassi">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           <Field label="Nº no veículo">
             <Input
               value={form.chassisNumberVehicle}
@@ -185,16 +185,17 @@ export function StepVistoria({
         )}
       </Section>
 
-      <Field label="Observações gerais">
+      <Section title="Observações gerais">
         <Textarea
           rows={3}
           value={form.notes}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
         />
-      </Field>
+      </Section>
     </div>
   );
 }
+
 
 function groupBy(list: VerificationStatus[]) {
   const out: Record<
@@ -217,12 +218,13 @@ function groupBy(list: VerificationStatus[]) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2 rounded-md border p-3">
-      <h3 className="text-sm font-semibold">{title}</h3>
+    <section className="space-y-3 py-5 first:pt-0 last:pb-0">
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       {children}
-    </div>
+    </section>
   );
 }
+
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
