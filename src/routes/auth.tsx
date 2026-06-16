@@ -1,10 +1,7 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { BottomBarButton } from "@/components/mobile/BottomActionBar";
 import { applySession, loginWithPassword, loginWithTotp, rememberIdentity } from "@/lib/auth";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import wrLogo from "@/assets/wr-logo.png.asset.json";
@@ -89,36 +86,46 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-background">
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col">
-        {/* Header vermelho */}
-        <div
-          className="relative bg-gradient-to-br from-[color:var(--primary-dark)] to-primary px-6 pb-20 pt-16 text-white"
-          style={{ paddingTop: "calc(env(safe-area-inset-top) + 4rem)" }}
+    <div className="min-h-dvh bg-[#F4F5F7]">
+      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
+        {/* Header vermelho premium */}
+        <header
+          className="relative px-7 pb-24 pt-14 text-white"
+          style={{
+            background:
+              "linear-gradient(160deg, #990E18 0%, #C91826 100%)",
+            paddingTop: "calc(env(safe-area-inset-top) + 3.5rem)",
+          }}
         >
           <img
             src={wrLogo.url}
             alt="WR Leilões"
-            className="h-12 w-auto"
+            className="h-14 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
           />
-          <p className="mt-5 max-w-xs text-sm font-medium text-white/85">
-            Operação de pátio e vistoria veicular.
+          <h1 className="mt-7 text-2xl font-bold leading-tight tracking-tight">
+            Acesse sua operação
+          </h1>
+          <p className="mt-2 text-sm font-medium text-white/[0.82]">
+            Pátio, vistoria e conferência veicular.
           </p>
-        </div>
+        </header>
 
-        {/* Card sobreposto */}
-        <div className="-mt-12 flex-1 px-4">
+        {/* Card flutuante */}
+        <main className="flex-1 px-6">
           <div
-            className="rounded-2xl border border-border bg-card p-6"
-            style={{ boxShadow: "var(--shadow-card)" }}
+            className="-mt-13 rounded-[28px] border border-[rgba(15,23,42,0.06)] bg-white p-7"
+            style={{
+              marginTop: "-52px",
+              boxShadow: "0 20px 50px rgba(15, 23, 42, 0.10)",
+            }}
           >
-            <div className="mb-5">
-              <h2 className="text-lg font-bold text-foreground">
-                {stage === "password" ? "Entrar" : "Verificação"}
+            <div className="mb-6">
+              <h2 className="text-base font-bold text-foreground">
+                {stage === "password" ? "Entrar no sistema" : "Verificação 2FA"}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {stage === "password"
-                  ? "Acesse com suas credenciais."
+                  ? "Use suas credenciais para continuar."
                   : "Informe o código de 6 dígitos do seu app autenticador."}
               </p>
             </div>
@@ -132,47 +139,39 @@ function AuthPage() {
             )}
 
             {stage === "password" ? (
-              <form onSubmit={submitPassword} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    E-mail
-                  </Label>
-                  <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="h-12 rounded-xl pl-10 text-base"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Senha
-                  </Label>
-                  <div className="relative">
-                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="h-12 rounded-xl pl-10 text-base"
-                    />
-                  </div>
-                </div>
+              <form onSubmit={submitPassword} className="space-y-5">
+                <FieldShell label="E-MAIL" htmlFor="email">
+                  <FieldInput
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="seuemail@empresa.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    icon={<Mail className="h-4 w-4" />}
+                  />
+                </FieldShell>
+                <FieldShell label="SENHA" htmlFor="password">
+                  <FieldInput
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="Digite sua senha"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    icon={<Lock className="h-4 w-4" />}
+                  />
+                </FieldShell>
+
                 {error && (
                   <Alert variant="destructive">
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
-                <BottomBarButton type="submit" disabled={loading} className="w-full">
+
+                <PrimaryButton type="submit" disabled={loading}>
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" /> Entrando…
@@ -180,45 +179,45 @@ function AuthPage() {
                   ) : (
                     "Entrar"
                   )}
-                </BottomBarButton>
+                </PrimaryButton>
+
                 <button
                   type="button"
-                  className="block w-full text-center text-xs font-medium text-muted-foreground hover:text-foreground"
+                  className="block w-full pt-1 text-center text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Esqueci minha senha
                 </button>
               </form>
             ) : (
-              <form onSubmit={submitTotp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="totp" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Código 2FA
-                  </Label>
-                  <div className="relative">
-                    <ShieldCheck className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="totp"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      maxLength={6}
-                      value={totp}
-                      onChange={(e) => setTotp(e.target.value.replace(/\D/g, ""))}
-                      required
-                      className="h-12 rounded-xl pl-10 text-center text-xl font-bold tracking-[0.4em]"
-                    />
-                  </div>
-                </div>
+              <form onSubmit={submitTotp} className="space-y-5">
+                <FieldShell label="CÓDIGO 2FA" htmlFor="totp">
+                  <FieldInput
+                    id="totp"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={totp}
+                    onChange={(e) => setTotp(e.target.value.replace(/\D/g, ""))}
+                    required
+                    icon={<ShieldCheck className="h-4 w-4" />}
+                    inputClassName="text-center text-xl font-bold tracking-[0.4em]"
+                  />
+                </FieldShell>
+
                 {error && (
                   <Alert variant="destructive">
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
-                <BottomBarButton type="submit" disabled={loading || totp.length < 6} className="w-full">
+
+                <PrimaryButton type="submit" disabled={loading || totp.length < 6}>
                   {loading ? "Validando…" : "Confirmar"}
-                </BottomBarButton>
+                </PrimaryButton>
+
                 <button
                   type="button"
-                  className="block w-full py-2 text-center text-sm font-medium text-muted-foreground hover:text-foreground"
+                  className="block w-full pt-1 text-center text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
                   onClick={() => {
                     setStage("password");
                     setTempToken(null);
@@ -230,8 +229,81 @@ function AuthPage() {
               </form>
             )}
           </div>
-        </div>
+
+          <footer className="mt-8 pb-8 text-center">
+            <p className="text-[13px] font-semibold text-muted-foreground">
+              WR Leilões
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground/70">
+              Operação interna • v1.0
+            </p>
+          </footer>
+        </main>
       </div>
     </div>
+  );
+}
+
+function FieldShell({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <label
+        htmlFor={htmlFor}
+        className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+      >
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function FieldInput({
+  icon,
+  inputClassName,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & {
+  icon: React.ReactNode;
+  inputClassName?: string;
+}) {
+  return (
+    <div className="group relative">
+      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary">
+        {icon}
+      </span>
+      <input
+        {...props}
+        className={
+          "h-14 w-full rounded-2xl border border-[#E5E7EB] bg-white pl-11 pr-4 text-[15px] text-foreground outline-none transition-all placeholder:text-muted-foreground/60 focus:border-primary focus:shadow-[0_0_0_4px_rgba(201,24,38,0.10)] " +
+          (inputClassName ?? "")
+        }
+      />
+    </div>
+  );
+}
+
+function PrimaryButton({
+  children,
+  className,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      {...props}
+      className={
+        "inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-[15px] font-bold text-primary-foreground shadow-[0_12px_24px_rgba(201,24,38,0.24)] transition-all hover:bg-[color:var(--primary-dark)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none " +
+        (className ?? "")
+      }
+    >
+      {children}
+    </button>
   );
 }
