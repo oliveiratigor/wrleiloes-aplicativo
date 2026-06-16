@@ -9,7 +9,7 @@ export function BottomActionBar({ children }: { children: React.ReactNode }) {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="mx-auto flex max-w-md gap-2 px-4 py-3">{children}</div>
+      <div className="mx-auto flex max-w-md gap-2 px-7 py-3">{children}</div>
     </div>
   );
 }
