@@ -287,3 +287,32 @@ function RadioList({
     </RadioGroup>
   );
 }
+
+function ApprovalButton({
+  active,
+  tone,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  tone: "approve" | "reject";
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  const activeClass =
+    tone === "approve"
+      ? "border-emerald-600 bg-emerald-600 text-white shadow-[0_8px_20px_rgba(5,150,105,0.25)]"
+      : "border-red-600 bg-red-600 text-white shadow-[0_8px_20px_rgba(220,38,38,0.25)]";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-[#E5E7EB] bg-white text-[15px] font-semibold text-foreground transition-all active:scale-[0.985]",
+        active && activeClass,
+      )}
+    >
+      {children}
+    </button>
+  );
+}
