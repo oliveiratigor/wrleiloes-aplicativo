@@ -59,11 +59,17 @@ export function StepFotos({
     };
   }, [productId, entryId]);
 
+  const bypassFotos = import.meta.env.VITE_BYPASS_FOTOS_REQUIRED === "true";
+
   useEffect(() => {
+    if (bypassFotos) {
+      onAllRequiredDone?.(true);
+      return;
+    }
     const required = slots.filter((s) => s.type.is_required);
     const allDone = required.every((s) => s.status === "done");
     onAllRequiredDone?.(allDone);
-  }, [slots, onAllRequiredDone]);
+  }, [slots, onAllRequiredDone, bypassFotos]);
 
   function onPick(typeId: string, file: File | null) {
     if (!file) return;
