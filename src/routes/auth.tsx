@@ -98,12 +98,12 @@ function AuthPage() {
           }}
         >
           <img
-            src={wrLogo.url}
+            src={wrLogo}
             alt="WR Leilões"
-            className="h-14 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+            className="h-12 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
           />
           <h1 className="mt-7 text-2xl font-bold leading-tight tracking-tight">
-            Acesse sua operação
+            Acesse sua conta
           </h1>
           <p className="mt-2 text-sm font-medium text-white/[0.82]">
             Pátio, vistoria e conferência veicular.
