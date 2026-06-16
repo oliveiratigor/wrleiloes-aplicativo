@@ -20,7 +20,7 @@ export const PlateInput = forwardRef<HTMLInputElement, Props>(function PlateInpu
       spellCheck={false}
       inputMode="text"
       className={cn(
-        "block w-full rounded-2xl border-2 border-border bg-white px-4 py-5 text-center text-2xl font-black uppercase tracking-[0.4em] text-foreground shadow-sm transition-all placeholder:tracking-[0.3em] placeholder:font-medium placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15",
+        "block w-full rounded-md border border-border bg-card px-4 py-5 text-center text-2xl font-black uppercase tracking-[0.4em] text-foreground transition-colors placeholder:tracking-[0.3em] placeholder:font-medium placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40",
         className,
       )}
     />
