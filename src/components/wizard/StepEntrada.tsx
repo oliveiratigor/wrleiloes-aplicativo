@@ -81,20 +81,24 @@ export function StepEntrada({
         )}
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Depósito">
-          <SearchableSelect
-            options={depositos}
-            value={data.depositId}
-            onChange={(v) => update({ depositId: v })}
-          />
-        </Field>
-        <Field label="Comitente">
-          <SearchableSelect
-            options={comitentes}
-            value={data.principalId}
-            onChange={(v) => update({ principalId: v })}
-          />
-        </Field>
+        <div className="min-w-0">
+          <Field label="Depósito">
+            <SearchableSelect
+              options={depositos}
+              value={data.depositId}
+              onChange={(v) => update({ depositId: v })}
+            />
+          </Field>
+        </div>
+        <div className="min-w-0">
+          <Field label="Comitente">
+            <SearchableSelect
+              options={comitentes}
+              value={data.principalId}
+              onChange={(v) => update({ principalId: v })}
+            />
+          </Field>
+        </div>
       </div>
       <Field label="Tipo de entrada">
         <SearchableSelect
