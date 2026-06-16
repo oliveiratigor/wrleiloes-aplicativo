@@ -2,7 +2,7 @@ import { LogOut } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { signOut } from "@/lib/auth";
 import { useAuth } from "@/hooks/use-auth";
-import wrLogo from "@/assets/wr-logo.png.asset.json";
+import wrLogo from "@/assets/wr-logo.svg";
 
 export function AppTopbar({
   subtitle,
@@ -19,7 +19,7 @@ export function AppTopbar({
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <Link to="/buscar" className="flex min-w-0 items-center gap-3">
           <img
-            src={wrLogo.url}
+            src={wrLogo}
             alt="WR Leilões"
             className="h-8 w-auto shrink-0"
           />
