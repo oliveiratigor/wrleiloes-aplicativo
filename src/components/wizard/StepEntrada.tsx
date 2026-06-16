@@ -1,8 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
@@ -14,6 +12,7 @@ import {
 } from "@/lib/api/lookups";
 import { useAuth } from "@/hooks/use-auth";
 import type { WizardState } from "@/lib/wizard-state";
+
 
 export function StepEntrada({
   data,
