@@ -25,6 +25,7 @@ import {
   type WizardState,
 } from "@/lib/wizard-state";
 import { useAuth } from "@/hooks/use-auth";
+import { signOut } from "@/lib/auth";
 import { cadastrarProduto } from "@/lib/api/cadastro";
 import { salvarVistoria } from "@/lib/api/vistoria";
 import { buscarProduto } from "@/lib/api/buscar";
