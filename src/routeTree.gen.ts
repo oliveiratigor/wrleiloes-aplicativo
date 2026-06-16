@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedBuscarRouteImport } from './routes/_authenticated/buscar'
+import { Route as AuthenticatedCadastroPlacaRouteImport } from './routes/_authenticated/cadastro.$placa'
 import { Route as AuthenticatedCadastroPlacaIndexRouteImport } from './routes/_authenticated/cadastro.$placa.index'
 import { Route as AuthenticatedCadastroPlacaSucessoRouteImport } from './routes/_authenticated/cadastro.$placa.sucesso'
 
@@ -35,23 +36,30 @@ const AuthenticatedBuscarRoute = AuthenticatedBuscarRouteImport.update({
   path: '/buscar',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedCadastroPlacaRoute =
+  AuthenticatedCadastroPlacaRouteImport.update({
+    id: '/cadastro/$placa',
+    path: '/cadastro/$placa',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCadastroPlacaIndexRoute =
   AuthenticatedCadastroPlacaIndexRouteImport.update({
-    id: '/cadastro/$placa/',
-    path: '/cadastro/$placa/',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedCadastroPlacaRoute,
   } as any)
 const AuthenticatedCadastroPlacaSucessoRoute =
   AuthenticatedCadastroPlacaSucessoRouteImport.update({
-    id: '/cadastro/$placa/sucesso',
-    path: '/cadastro/$placa/sucesso',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/sucesso',
+    path: '/sucesso',
+    getParentRoute: () => AuthenticatedCadastroPlacaRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/buscar': typeof AuthenticatedBuscarRoute
+  '/cadastro/$placa': typeof AuthenticatedCadastroPlacaRouteWithChildren
   '/cadastro/$placa/sucesso': typeof AuthenticatedCadastroPlacaSucessoRoute
   '/cadastro/$placa/': typeof AuthenticatedCadastroPlacaIndexRoute
 }
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/buscar': typeof AuthenticatedBuscarRoute
+  '/_authenticated/cadastro/$placa': typeof AuthenticatedCadastroPlacaRouteWithChildren
   '/_authenticated/cadastro/$placa/sucesso': typeof AuthenticatedCadastroPlacaSucessoRoute
   '/_authenticated/cadastro/$placa/': typeof AuthenticatedCadastroPlacaIndexRoute
 }
@@ -77,6 +86,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/buscar'
+    | '/cadastro/$placa'
     | '/cadastro/$placa/sucesso'
     | '/cadastro/$placa/'
   fileRoutesByTo: FileRoutesByTo
@@ -92,6 +102,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/buscar'
+    | '/_authenticated/cadastro/$placa'
     | '/_authenticated/cadastro/$placa/sucesso'
     | '/_authenticated/cadastro/$placa/'
   fileRoutesById: FileRoutesById
@@ -132,34 +143,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBuscarRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/cadastro/$placa': {
+      id: '/_authenticated/cadastro/$placa'
+      path: '/cadastro/$placa'
+      fullPath: '/cadastro/$placa'
+      preLoaderRoute: typeof AuthenticatedCadastroPlacaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/cadastro/$placa/': {
       id: '/_authenticated/cadastro/$placa/'
-      path: '/cadastro/$placa'
+      path: '/'
       fullPath: '/cadastro/$placa/'
       preLoaderRoute: typeof AuthenticatedCadastroPlacaIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedCadastroPlacaRoute
     }
     '/_authenticated/cadastro/$placa/sucesso': {
       id: '/_authenticated/cadastro/$placa/sucesso'
-      path: '/cadastro/$placa/sucesso'
+      path: '/sucesso'
       fullPath: '/cadastro/$placa/sucesso'
       preLoaderRoute: typeof AuthenticatedCadastroPlacaSucessoRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedCadastroPlacaRoute
     }
   }
 }
 
-interface AuthenticatedRouteChildren {
-  AuthenticatedBuscarRoute: typeof AuthenticatedBuscarRoute
+interface AuthenticatedCadastroPlacaRouteChildren {
   AuthenticatedCadastroPlacaSucessoRoute: typeof AuthenticatedCadastroPlacaSucessoRoute
   AuthenticatedCadastroPlacaIndexRoute: typeof AuthenticatedCadastroPlacaIndexRoute
 }
 
+const AuthenticatedCadastroPlacaRouteChildren: AuthenticatedCadastroPlacaRouteChildren =
+  {
+    AuthenticatedCadastroPlacaSucessoRoute:
+      AuthenticatedCadastroPlacaSucessoRoute,
+    AuthenticatedCadastroPlacaIndexRoute: AuthenticatedCadastroPlacaIndexRoute,
+  }
+
+const AuthenticatedCadastroPlacaRouteWithChildren =
+  AuthenticatedCadastroPlacaRoute._addFileChildren(
+    AuthenticatedCadastroPlacaRouteChildren,
+  )
+
+interface AuthenticatedRouteChildren {
+  AuthenticatedBuscarRoute: typeof AuthenticatedBuscarRoute
+  AuthenticatedCadastroPlacaRoute: typeof AuthenticatedCadastroPlacaRouteWithChildren
+}
+
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBuscarRoute: AuthenticatedBuscarRoute,
-  AuthenticatedCadastroPlacaSucessoRoute:
-    AuthenticatedCadastroPlacaSucessoRoute,
-  AuthenticatedCadastroPlacaIndexRoute: AuthenticatedCadastroPlacaIndexRoute,
+  AuthenticatedCadastroPlacaRoute: AuthenticatedCadastroPlacaRouteWithChildren,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
