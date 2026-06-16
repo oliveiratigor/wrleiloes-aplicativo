@@ -20,10 +20,15 @@ export function detectIdentifier(raw: string):
   | { kind: "invalid"; reason: string } {
   const value = raw.trim().toUpperCase().replace(/[\s-]/g, "");
   if (!value) return { kind: "invalid", reason: "Informe uma placa ou renavam." };
+  // só pode conter alfanumérico
+  if (!/^[A-Z0-9]+$/.test(value)) {
+    return { kind: "invalid", reason: "Placa ou renavam inválido." };
+  }
   // renavam: só dígitos, 9 a 11 caracteres
   if (/^\d{9,11}$/.test(value)) return { kind: "renavam", renavam: value };
-  // placa Mercosul: AAA0A00  |  antiga: AAA0000
-  if (/^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(value) || /^[A-Z]{3}\d{4}$/.test(value)) {
+  // placa: 6 a 8 caracteres, ao menos 1 letra e 1 dígito.
+  // Permissivo para cobrir Mercosul, antiga e variantes legadas do backoffice.
+  if (value.length >= 6 && value.length <= 8 && /[A-Z]/.test(value) && /\d/.test(value)) {
     return { kind: "plate", plate: value };
   }
   return { kind: "invalid", reason: "Placa ou renavam inválido." };
