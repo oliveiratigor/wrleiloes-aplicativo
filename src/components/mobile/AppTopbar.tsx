@@ -24,10 +24,14 @@ export function AppTopbar({
 
   return (
     <header
-      className="relative flex flex-col px-7 pb-10 pt-12 text-white"
+      className="relative flex flex-col text-white"
       style={{
+        height: "calc(var(--header-height) + env(safe-area-inset-top))",
+        paddingTop: "calc(env(safe-area-inset-top) + 20px)",
+        paddingLeft: "var(--page-padding)",
+        paddingRight: "var(--page-padding)",
+        paddingBottom: "16px",
         background: "linear-gradient(160deg, #990E18 0%, #C91826 100%)",
-        paddingTop: "calc(env(safe-area-inset-top) + 3rem)",
       }}
     >
       <div className="flex items-center justify-between">
@@ -46,13 +50,15 @@ export function AppTopbar({
         </button>
       </div>
 
-      <div className="mt-8">
-        <h1 className="text-2xl font-bold leading-tight tracking-tight">
+      <div className="mt-auto">
+        <h1 className="text-xl font-bold leading-tight tracking-tight">
           {greeting}
         </h1>
-        <p className="mt-2 text-sm font-medium text-white/[0.82]">
-          {subtitle ?? "Bem-vindo de volta."}
-        </p>
+        {subtitle && (
+          <p className="mt-1 text-xs font-medium text-white/[0.82]">
+            {subtitle}
+          </p>
+        )}
       </div>
     </header>
   );
