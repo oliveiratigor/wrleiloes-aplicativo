@@ -1,18 +1,39 @@
-## Ajustes finos na tela de login
+## Header interno no estilo da tela de login
 
-Edições em `src/routes/auth.tsx`:
+Aplicar o mesmo visual da `/auth` ao header das páginas internas (`/buscar`, `/cadastro/...`).
 
-1. **Cantos arredondados visíveis** — aumentar o raio e o overlap do card sobre o header para que a curvatura apareça com clareza:
-   - `rounded-t-[28px]` (mantém) + `-mt-6` (sobreposição menor mas garantida)
-   - garantir que não há `overflow-hidden` num ancestral cortando
+### 1. `src/components/mobile/AppTopbar.tsx`
 
-2. **Logo 30% menor** — `h-12` (48px) → `h-9` (36px).
+Reescrever o componente para:
 
-3. **"Acesse sua conta" mais baixa, 40px do card** — reorganizar o header para empurrar título/subtítulo para perto do card:
-   - usar `flex flex-col` no header com o bloco de texto (título + subtítulo) com `mt-auto` (encosta no rodapé do header)
-   - header com `min-h-[300px]` e `pb-10` (40px) → subtítulo fica a 40px da borda do card branco
-   - logo fica no topo, texto fica no fundo do bloco vermelho
+- **Gradiente vermelho** igual ao login: `linear-gradient(160deg, #990E18 0%, #C91826 100%)`.
+- **Layout em coluna**, respeitando `safe-area-inset-top`, com padding `px-7 pt-12 pb-10`.
+- **Topo**: linha com logo (`h-9 w-auto`, mesma do login) à esquerda + botão sair (ícone `LogOut` em `bg-white/10 rounded-xl h-10 w-10`) à direita.
+- **Bloco de saudação** abaixo: título elegante `Olá, Rafael` (`text-2xl font-bold tracking-tight`) + subtítulo opcional (default: "Bem-vindo de volta.") em `text-sm text-white/[0.82]`.
+- O componente continua aceitando `subtitle` opcional para sobrescrever a linha de baixo.
 
-4. **Respiro no topo do card** — `pt-8` → `pt-12` (48px) para "Entrar no sistema" não colar no topo.
+### 2. `src/components/mobile/MobileShell.tsx`
 
-Sem alterações de lógica.
+Para que o card branco com cantos arredondados apareça igual ao login:
+
+- `bg-background` do wrapper externo → `bg-white` (não há mais fundo cinza).
+- O `<main>` ganha `-mt-6 rounded-t-[28px] bg-white` com sombra suave `0 -8px 24px rgba(15,23,42,0.06)` **somente quando há `topbar`**.
+- Aumentar `pt-4` → `pt-8` para dar respiro ao conteúdo logo abaixo da curva.
+
+### Resultado
+
+Mesma identidade visual da tela de login:
+
+```text
+┌─────────────────────────┐
+│ [gradiente vermelho]    │
+│  WR LEILÕES        [⇥] │
+│                         │
+│  Olá, Rafael            │
+│  Bem-vindo de volta.    │
+│ ╭─────────────────────╮ │ ← card branco rounded-t
+│ │ Pesquisar veículo   │ │
+│ │ ...                 │ │
+```
+
+Nada de lógica é alterado, só apresentação.
