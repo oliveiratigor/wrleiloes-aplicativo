@@ -92,7 +92,7 @@ export async function salvarVistoria(v: VistoriaInput) {
     .update({
       final_approval_status: v.finalApproval, // null | 'approved' | 'rejected'
       rejection_notes: v.finalApproval === "rejected" ? v.rejectionNotes ?? null : null,
-      charge_tow: v.chargeTow ?? null,
+      charge_tow: v.chargeTow ?? false,
       km_initial: v.kmInitial ?? null,
       km_final: v.kmFinal ?? null,
     })
