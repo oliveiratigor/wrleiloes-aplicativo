@@ -1,29 +1,30 @@
 ## Objetivo
-Substituir o badge textual "WR" pela logo oficial WR Leilões (vinda do projeto Backoffice) no topbar do app e na tela de login.
+Quando o app detecta "sessão sem identidade" no `saveStep3` do cadastro, em vez de mostrar a mensagem de erro, deslogar e mandar o usuário para `/auth`, e ao fazer login bem-sucedido devolvê-lo à URL onde estava.
 
-## Origem do ativo
-- Backoffice: `public/images/wr-logo.png` (PNG, fundo vermelho, ~77KB, com a marca "WR LEILÕES" em branco).
+## Mudanças
 
-## Implementação
+### 1. `src/routes/auth.tsx` — aceitar `?redirect=`
+- Adicionar `validateSearch` ao `createFileRoute("/auth")` aceitando `redirect?: string`.
+- Em `AuthPage`, ler `Route.useSearch()` para obter `redirect`.
+- Helper `goNext()`: se `redirect` existir e for um path interno (começa com `/` e não com `//`), navegar via `router.history.push(redirect)`; caso contrário, `navigate({ to: "/buscar", replace: true })`.
+- Substituir os três `navigate({ to: "/buscar", replace: true })` (auto-redirect quando já há sessão, pós-senha, pós-TOTP) por `goNext()`.
 
-### 1. Trazer a logo para o projeto via Lovable Assets
-Em build mode:
-```
-cross_project--copy_project_asset (project=Backoffice, source=public/images/wr-logo.png, target=/tmp/wr-logo.png)
-lovable-assets create --file /tmp/wr-logo.png --filename wr-logo.png > src/assets/wr-logo.png.asset.json
-```
-Isso evita commitar o binário e gera o pointer JSON em `src/assets/`.
-
-### 2. `src/components/mobile/AppTopbar.tsx`
-- Importar `wrLogo from "@/assets/wr-logo.png.asset.json"`.
-- Trocar o quadrado `<div>WR</div>` por `<img src={wrLogo.url} alt="WR Leilões" className="h-8 w-auto" />`.
-- Como a logo já contém o texto "WR LEILÕES", remover o título "WR Leilões" do bloco ao lado e manter apenas o subtítulo (saudação/Operação) em uma única linha, para não duplicar a marca.
-
-### 3. `src/routes/auth.tsx`
-- Importar a mesma logo.
-- Substituir o badge `<div>WR</div>` por `<img src={wrLogo.url} alt="WR Leilões" className="h-12 w-auto" />`.
-- Remover o `<h1>WR Leilões</h1>` (já presente na logo) e manter o subtítulo "Operação de pátio e vistoria veicular." logo abaixo, com margem ajustada.
+### 2. `src/routes/_authenticated/cadastro.$placa.tsx` — auto-recuperar
+- Em `saveStep3`, trocar o ramo `if (!user?.uuid) { setError(...); return; }` por:
+  ```ts
+  if (!user?.uuid) {
+    await signOut();
+    navigate({
+      to: "/auth",
+      search: { redirect: window.location.pathname + window.location.search },
+      replace: true,
+    });
+    return;
+  }
+  ```
+- Importar `signOut` de `@/lib/auth`.
 
 ## Fora de escopo
-- Variante dark/clara separada da logo (a atual em branco sobre vermelho funciona nos dois usos, pois ambos os fundos são vermelhos).
-- Favicon / manifest — pode ser feito em pedido futuro.
+- Não mexer no gate `_authenticated/route.tsx` (já redireciona quando o Supabase perde sessão).
+- Não tratar outros pontos com `user?.uuid` (não há outros call sites com essa mensagem).
+- Persistência do rascunho do wizard ao voltar: o estado em memória se perde naturalmente, mas a URL preserva a placa/step para reabrir o mesmo cadastro.

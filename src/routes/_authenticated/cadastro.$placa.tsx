@@ -25,6 +25,7 @@ import {
   type WizardState,
 } from "@/lib/wizard-state";
 import { useAuth } from "@/hooks/use-auth";
+import { signOut } from "@/lib/auth";
 import { cadastrarProduto } from "@/lib/api/cadastro";
 import { salvarVistoria } from "@/lib/api/vistoria";
 import { buscarProduto } from "@/lib/api/buscar";
@@ -128,7 +129,14 @@ function CadastroPage() {
 
   async function saveStep3() {
     if (!user?.uuid) {
-      setError("Sessão sem identidade — refaça login.");
+      await signOut();
+      navigate({
+        to: "/auth",
+        search: {
+          redirect: window.location.pathname + window.location.search,
+        },
+        replace: true,
+      });
       return;
     }
     if (!data.branchId) {
