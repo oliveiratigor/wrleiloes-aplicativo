@@ -301,10 +301,7 @@ function CadastroPage() {
         </div>
 
         {/* Stepper */}
-        <div
-          className="rounded-xl border border-border bg-card p-3"
-          style={{ boxShadow: "var(--shadow-card)" }}
-        >
+        <div className="rounded-xl bg-card p-3">
           <Stepper steps={STEPS} current={step} onJump={(id) => go(id)} />
         </div>
 
@@ -317,8 +314,7 @@ function CadastroPage() {
         {/* Conteúdo da etapa */}
         <div
           key={step}
-          className="rounded-2xl border border-border bg-card p-4 animate-in fade-in slide-in-from-bottom-1 duration-200"
-          style={{ boxShadow: "var(--shadow-card)" }}
+          className="rounded-2xl bg-card p-4 animate-in fade-in slide-in-from-bottom-1 duration-200"
         >
           {step === 2 && (
             <Suspense fallback={<Skeleton className="h-64 w-full" />}>

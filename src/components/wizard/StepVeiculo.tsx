@@ -27,7 +27,7 @@ export function StepVeiculo({
       {preFilled && (
         <Badge variant="secondary">Pré-preenchido pela consulta WR</Badge>
       )}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-3">
         <Field label="Placa">
           <Input
             value={data.plate}
@@ -56,9 +56,6 @@ export function StepVeiculo({
             onChange={(e) => update({ engine: e.target.value })}
           />
         </Field>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
         <Field label="Marca">
           <SearchableSelect
             options={marcas}
@@ -91,9 +88,6 @@ export function StepVeiculo({
             placeholder="Ex.: Flex"
           />
         </Field>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3">
         <Field label="Ano fab.">
           <Input
             inputMode="numeric"
@@ -119,9 +113,6 @@ export function StepVeiculo({
             onChange={(e) => update({ mileage: e.target.value.replace(/\D/g, "") })}
           />
         </Field>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
         <Field label="Tipo">
           <SearchableSelect
             options={tipos}
@@ -140,9 +131,6 @@ export function StepVeiculo({
             </span>
           </div>
         </Field>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
         <Field label="Código FIPE">
           <Input
             value={data.fipeCodigo}
