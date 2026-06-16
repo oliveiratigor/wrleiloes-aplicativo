@@ -98,11 +98,13 @@ export function SearchableSelect({
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-        <DrawerContent className="max-h-[85vh]">
+        <DrawerContent className="h-[50vh]">
           <DrawerHeader className="pb-2">
             <DrawerTitle className="text-base">{title ?? placeholder}</DrawerTitle>
           </DrawerHeader>
-          <div className="px-2 pb-[env(safe-area-inset-bottom)]">{list}</div>
+          <div className="flex-1 min-h-0 px-2 pb-[env(safe-area-inset-bottom)]">
+            {list}
+          </div>
         </DrawerContent>
       </Drawer>
     );
