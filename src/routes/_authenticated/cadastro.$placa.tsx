@@ -216,9 +216,16 @@ function CadastroPage() {
         rejectionNotes: vistoria.rejectionNotes || null,
         notes: vistoria.notes || null,
       });
+      const finishedMode = data.mode;
+      const finishedApproval = vistoria.finalApproval || "none";
       clearWizard(data.plate);
       toast.success("Vistoria concluída");
-      navigate({ to: "/buscar" });
+      navigate({
+        to: "/cadastro/$placa/sucesso",
+        params: { placa: data.plate },
+        search: { mode: finishedMode, approval: finishedApproval },
+        replace: true,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao salvar vistoria");
     } finally {
