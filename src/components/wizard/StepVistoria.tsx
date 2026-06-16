@@ -218,12 +218,13 @@ function groupBy(list: VerificationStatus[]) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2 rounded-md border p-3">
-      <h3 className="text-sm font-semibold">{title}</h3>
+    <section className="space-y-3 py-5 first:pt-0 last:pb-0">
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       {children}
-    </div>
+    </section>
   );
 }
+
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
