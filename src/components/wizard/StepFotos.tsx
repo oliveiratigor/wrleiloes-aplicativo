@@ -59,11 +59,17 @@ export function StepFotos({
     };
   }, [productId, entryId]);
 
+  const bypassFotos = import.meta.env.VITE_BYPASS_FOTOS_REQUIRED === "true";
+
   useEffect(() => {
+    if (bypassFotos) {
+      onAllRequiredDone?.(true);
+      return;
+    }
     const required = slots.filter((s) => s.type.is_required);
     const allDone = required.every((s) => s.status === "done");
     onAllRequiredDone?.(allDone);
-  }, [slots, onAllRequiredDone]);
+  }, [slots, onAllRequiredDone, bypassFotos]);
 
   function onPick(typeId: string, file: File | null) {
     if (!file) return;
@@ -134,6 +140,11 @@ export function StepFotos({
 
   return (
     <div className="space-y-3">
+      {bypassFotos && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          Bypass de fotos ativo — somente para testes. As fotos obrigatórias não estão sendo exigidas.
+        </div>
+      )}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>
