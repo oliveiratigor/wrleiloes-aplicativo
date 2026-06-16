@@ -142,30 +142,31 @@ export function StepVistoria({
       )}
 
       <Section title="Aprovação final">
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant={form.finalApproval === "approved" ? "default" : "outline"}
-            onClick={() => setForm({ ...form, finalApproval: "approved" })}
-            className="flex-1"
+        <div className="grid grid-cols-2 gap-3">
+          <ApprovalButton
+            active={form.finalApproval === "approved"}
+            tone="approve"
+            onClick={() =>
+              setForm({
+                ...form,
+                finalApproval: form.finalApproval === "approved" ? "" : "approved",
+              })
+            }
           >
-            Aprovar
-          </Button>
-          <Button
-            type="button"
-            variant={form.finalApproval === "rejected" ? "destructive" : "outline"}
-            onClick={() => setForm({ ...form, finalApproval: "rejected" })}
-            className="flex-1"
+            <Check className="h-4 w-4" /> Aprovar
+          </ApprovalButton>
+          <ApprovalButton
+            active={form.finalApproval === "rejected"}
+            tone="reject"
+            onClick={() =>
+              setForm({
+                ...form,
+                finalApproval: form.finalApproval === "rejected" ? "" : "rejected",
+              })
+            }
           >
-            Reprovar
-          </Button>
-          <Button
-            type="button"
-            variant={form.finalApproval === "" ? "secondary" : "outline"}
-            onClick={() => setForm({ ...form, finalApproval: "" })}
-          >
-            Pendente
-          </Button>
+            <X className="h-4 w-4" /> Reprovar
+          </ApprovalButton>
         </div>
         {form.finalApproval === "rejected" && (
           <>
