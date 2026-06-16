@@ -42,7 +42,7 @@ const searchSchema = z.object({
   step: z.coerce.number().min(2).max(5).catch(2),
 });
 
-export const Route = createFileRoute("/_authenticated/cadastro/$placa")({
+export const Route = createFileRoute("/_authenticated/cadastro/$placa/")({
   validateSearch: searchSchema,
   head: ({ params }) => ({ meta: [{ title: `Cadastro ${params.placa}` }] }),
   component: CadastroPage,
