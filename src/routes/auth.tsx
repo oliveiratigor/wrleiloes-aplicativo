@@ -229,16 +229,16 @@ function AuthPage() {
               </form>
             )}
           </div>
-
-          <footer className="mt-8 pb-8 text-center">
-            <p className="text-[13px] font-semibold text-muted-foreground">
-              WR Leilões
-            </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground/70">
-              Operação interna • v1.0
-            </p>
-          </footer>
         </main>
+
+        <footer
+          className="mt-auto px-6 pt-8 pb-8 text-center"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)" }}
+        >
+          <p className="text-[11px] font-medium text-muted-foreground/70">
+            v1.0
+          </p>
+        </footer>
       </div>
     </div>
   );
