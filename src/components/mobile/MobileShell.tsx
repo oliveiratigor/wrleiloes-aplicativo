@@ -17,8 +17,8 @@ export function MobileShell({
         {topbar}
         <main
           className={cn(
-            "flex-1 px-4 pt-8 pb-6",
-            topbar && "-mt-6 rounded-t-[28px] bg-white px-6",
+            "flex-1 px-7 pt-8 pb-6",
+            topbar && "-mt-6 rounded-t-[28px] bg-white",
             bottom && "pb-28",
             className,
           )}
