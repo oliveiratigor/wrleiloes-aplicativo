@@ -4,7 +4,7 @@ import { Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { applySession, loginWithPassword, loginWithTotp, rememberIdentity } from "@/lib/auth";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
-import wrLogo from "@/assets/wr-logo.png.asset.json";
+import wrLogo from "@/assets/wr-logo.svg";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -98,12 +98,12 @@ function AuthPage() {
           }}
         >
           <img
-            src={wrLogo.url}
+            src={wrLogo}
             alt="WR Leilões"
-            className="h-14 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+            className="h-12 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
           />
           <h1 className="mt-7 text-2xl font-bold leading-tight tracking-tight">
-            Acesse sua operação
+            Acesse sua conta
           </h1>
           <p className="mt-2 text-sm font-medium text-white/[0.82]">
             Pátio, vistoria e conferência veicular.
@@ -229,16 +229,16 @@ function AuthPage() {
               </form>
             )}
           </div>
-
-          <footer className="mt-8 pb-8 text-center">
-            <p className="text-[13px] font-semibold text-muted-foreground">
-              WR Leilões
-            </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground/70">
-              Operação interna • v1.0
-            </p>
-          </footer>
         </main>
+
+        <footer
+          className="mt-auto px-6 pt-8 pb-8 text-center"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)" }}
+        >
+          <p className="text-[11px] font-medium text-muted-foreground/70">
+            v1.0
+          </p>
+        </footer>
       </div>
     </div>
   );
