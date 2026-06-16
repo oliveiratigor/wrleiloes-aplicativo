@@ -301,10 +301,7 @@ function CadastroPage() {
         </div>
 
         {/* Stepper */}
-        <div
-          className="rounded-xl border border-border bg-card p-3"
-          style={{ boxShadow: "var(--shadow-card)" }}
-        >
+        <div className="rounded-xl bg-card p-3">
           <Stepper steps={STEPS} current={step} onJump={(id) => go(id)} />
         </div>
 

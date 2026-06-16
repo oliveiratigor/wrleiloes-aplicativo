@@ -1,19 +1,20 @@
-## Objetivo
-Transformar os combobox do wizard num bottom sheet estilo app (imagem 2) quando em mobile, mantendo o Popover atual em telas maiores.
-
 ## Mudanças
 
-**`src/components/shared/SearchableSelect.tsx`**
-- Detectar viewport mobile via `useIsMobile()` (hook já existente em `src/hooks/use-mobile.tsx`).
-- Em desktop: manter `Popover + Command` atual.
-- Em mobile: abrir `Drawer` (shadcn `@/components/ui/drawer`, posição bottom) contendo:
-  - Handle e título opcional (usa `placeholder` como título).
-  - `Command` com `CommandInput` (busca) no topo.
-  - `CommandList` com `max-h-[60vh]` para rolagem confortável.
-  - `CommandItem`s com check à esquerda, label uppercase — fechar o drawer ao selecionar.
-- Trigger (botão) permanece igual, sem alteração visual.
-- Aceitar prop opcional `title` para sobrescrever o título do sheet (default = placeholder).
+**`src/routes/_authenticated/cadastro.$placa.tsx`**
+- Remover borda dos wrappers de etapa e do stepper: tirar `border border-border` e `shadow-card` (linhas 305 e 320). Manter `bg-card` (ou trocar por transparente) e `rounded` apenas se necessário — visual mais fluido sem caixa.
+
+**`src/components/wizard/StepEntrada.tsx`** (linha 83)
+- Substituir `grid grid-cols-2 gap-3` (Depósito + Comitente) por `space-y-3` → ambos viram col-12.
+
+**`src/components/wizard/StepVeiculo.tsx`** (linhas 30, 61, 96, 124, 145)
+- Trocar todos os `grid grid-cols-2 gap-3` e `grid grid-cols-3 gap-3` por `space-y-3` para que cada campo ocupe 100% da largura.
+
+**`src/components/wizard/StepVistoria.tsx`**
+- Já está col-12; sem mudanças (apenas confirmar).
+
+**`src/components/wizard/StepFotos.tsx`** (linha 147)
+- Manter `grid grid-cols-2` aqui — são miniaturas de fotos, não campos de formulário.
 
 ## Resultado
-- Steps do cadastro (Entrada, Veículo, etc.) ganham automaticamente a UX de bottom sheet pesquisável em mobile.
-- Sem mudanças em desktop, sem alteração de API nos chamadores.
+- Steps sem "card dentro de card": só o fundo do wizard sem borda visível.
+- Todos os inputs/selects de formulário ocupam largura total em todas as etapas.
