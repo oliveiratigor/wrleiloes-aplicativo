@@ -85,7 +85,7 @@ function AuthPage() {
     rememberIdentity(res.user, res.account);
     await applySession(res.token, res.refresh_token);
     router.invalidate();
-    navigate({ to: "/buscar", replace: true });
+    goNext();
   }
 
   return (
