@@ -190,3 +190,46 @@
     display: none;
   }
 }
+
+/* Alias compatível com guia WR Leilões */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Tipografia padronizada (Fase 1) */
+@utility text-label {
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+@utility page-title {
+  font-size: 32px;
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-foreground);
+}
+
+@utility page-subtitle {
+  font-size: 18px;
+  line-height: 1.45;
+  font-weight: 400;
+  color: var(--color-muted-foreground);
+}
+
+@utility plate-display {
+  font-size: 44px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: var(--color-foreground);
+}
+
