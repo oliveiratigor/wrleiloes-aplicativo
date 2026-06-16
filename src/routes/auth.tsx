@@ -4,7 +4,7 @@ import { Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { applySession, loginWithPassword, loginWithTotp, rememberIdentity } from "@/lib/auth";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
-import wrLogo from "@/assets/wr-logo.png.asset.json";
+import wrLogo from "@/assets/wr-logo.svg";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
