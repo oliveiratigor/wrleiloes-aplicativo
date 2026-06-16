@@ -86,163 +86,156 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-[#F4F5F7]">
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
-        {/* Header vermelho premium */}
-        <header
-          className="relative px-7 pb-24 pt-14 text-white"
-          style={{
-            background:
-              "linear-gradient(160deg, #990E18 0%, #C91826 100%)",
-            paddingTop: "calc(env(safe-area-inset-top) + 3.5rem)",
-          }}
-        >
-          <img
-            src={wrLogo}
-            alt="WR Leilões"
-            className="h-12 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
-          />
-          <h1 className="mt-7 text-2xl font-bold leading-tight tracking-tight">
-            Acesse sua conta
-          </h1>
-          <p className="mt-2 text-sm font-medium text-white/[0.82]">
-            Pátio, vistoria e conferência veicular.
+    <div className="flex min-h-dvh flex-col bg-white">
+      {/* Header vermelho premium */}
+      <header
+        className="relative px-7 pb-20 pt-14 text-white"
+        style={{
+          background: "linear-gradient(160deg, #990E18 0%, #C91826 100%)",
+          paddingTop: "calc(env(safe-area-inset-top) + 3.5rem)",
+        }}
+      >
+        <img
+          src={wrLogo}
+          alt="WR Leilões"
+          className="h-12 w-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+        />
+        <h1 className="mt-7 text-2xl font-bold leading-tight tracking-tight">
+          Acesse sua conta
+        </h1>
+        <p className="mt-2 text-sm font-medium text-white/[0.82]">
+          Pátio, vistoria e conferência veicular.
+        </p>
+      </header>
+
+      {/* Card branco full-width */}
+      <main
+        className="-mt-8 flex flex-1 flex-col rounded-t-[32px] bg-white px-6 pt-8 pb-10"
+        style={{ boxShadow: "0 -8px 24px rgba(15, 23, 42, 0.06)" }}
+      >
+        <div className="mb-6">
+          <h2 className="text-base font-bold text-foreground">
+            {stage === "password" ? "Entrar no sistema" : "Verificação 2FA"}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {stage === "password"
+              ? "Use suas credenciais para continuar."
+              : "Informe o código de 6 dígitos do seu app autenticador."}
           </p>
-        </header>
+        </div>
 
-        {/* Card flutuante */}
-        <main className="flex-1 px-6">
-          <div
-            className="-mt-13 rounded-[28px] border border-[rgba(15,23,42,0.06)] bg-white p-7"
-            style={{
-              marginTop: "-52px",
-              boxShadow: "0 20px 50px rgba(15, 23, 42, 0.10)",
-            }}
-          >
-            <div className="mb-6">
-              <h2 className="text-base font-bold text-foreground">
-                {stage === "password" ? "Entrar no sistema" : "Verificação 2FA"}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {stage === "password"
-                  ? "Use suas credenciais para continuar."
-                  : "Informe o código de 6 dígitos do seu app autenticador."}
-              </p>
-            </div>
+        {!isSupabaseConfigured && (
+          <Alert className="mb-4">
+            <AlertDescription className="text-xs">
+              Variáveis Supabase não configuradas. O login não vai funcionar.
+            </AlertDescription>
+          </Alert>
+        )}
 
-            {!isSupabaseConfigured && (
-              <Alert className="mb-4">
-                <AlertDescription className="text-xs">
-                  Variáveis Supabase não configuradas. O login não vai funcionar.
-                </AlertDescription>
+        {stage === "password" ? (
+          <form onSubmit={submitPassword} className="space-y-5">
+            <FieldShell label="E-MAIL" htmlFor="email">
+              <FieldInput
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="seuemail@empresa.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                icon={<Mail className="h-4 w-4" />}
+              />
+            </FieldShell>
+            <FieldShell label="SENHA" htmlFor="password">
+              <FieldInput
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="Digite sua senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                icon={<Lock className="h-4 w-4" />}
+              />
+            </FieldShell>
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
-            {stage === "password" ? (
-              <form onSubmit={submitPassword} className="space-y-5">
-                <FieldShell label="E-MAIL" htmlFor="email">
-                  <FieldInput
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="seuemail@empresa.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    icon={<Mail className="h-4 w-4" />}
-                  />
-                </FieldShell>
-                <FieldShell label="SENHA" htmlFor="password">
-                  <FieldInput
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder="Digite sua senha"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    icon={<Lock className="h-4 w-4" />}
-                  />
-                </FieldShell>
+            <PrimaryButton type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Entrando…
+                </>
+              ) : (
+                "Entrar"
+              )}
+            </PrimaryButton>
 
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
+            <button
+              type="button"
+              className="block w-full pt-1 text-center text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Esqueci minha senha
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={submitTotp} className="space-y-5">
+            <FieldShell label="CÓDIGO 2FA" htmlFor="totp">
+              <FieldInput
+                id="totp"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="000000"
+                value={totp}
+                onChange={(e) => setTotp(e.target.value.replace(/\D/g, ""))}
+                required
+                icon={<ShieldCheck className="h-4 w-4" />}
+                inputClassName="text-center text-xl font-bold tracking-[0.4em]"
+              />
+            </FieldShell>
 
-                <PrimaryButton type="submit" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Entrando…
-                    </>
-                  ) : (
-                    "Entrar"
-                  )}
-                </PrimaryButton>
-
-                <button
-                  type="button"
-                  className="block w-full pt-1 text-center text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Esqueci minha senha
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={submitTotp} className="space-y-5">
-                <FieldShell label="CÓDIGO 2FA" htmlFor="totp">
-                  <FieldInput
-                    id="totp"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={6}
-                    placeholder="000000"
-                    value={totp}
-                    onChange={(e) => setTotp(e.target.value.replace(/\D/g, ""))}
-                    required
-                    icon={<ShieldCheck className="h-4 w-4" />}
-                    inputClassName="text-center text-xl font-bold tracking-[0.4em]"
-                  />
-                </FieldShell>
-
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                <PrimaryButton type="submit" disabled={loading || totp.length < 6}>
-                  {loading ? "Validando…" : "Confirmar"}
-                </PrimaryButton>
-
-                <button
-                  type="button"
-                  className="block w-full pt-1 text-center text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-                  onClick={() => {
-                    setStage("password");
-                    setTempToken(null);
-                    setTotp("");
-                  }}
-                >
-                  Voltar
-                </button>
-              </form>
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
-          </div>
-        </main>
+
+            <PrimaryButton type="submit" disabled={loading || totp.length < 6}>
+              {loading ? "Validando…" : "Confirmar"}
+            </PrimaryButton>
+
+            <button
+              type="button"
+              className="block w-full pt-1 text-center text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => {
+                setStage("password");
+                setTempToken(null);
+                setTotp("");
+              }}
+            >
+              Voltar
+            </button>
+          </form>
+        )}
 
         <footer
-          className="mt-auto px-6 pt-8 pb-8 text-center"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)" }}
+          className="mt-auto pt-8 text-center"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
         >
           <p className="text-[11px] font-medium text-muted-foreground/70">
             v1.0
           </p>
         </footer>
-      </div>
+      </main>
     </div>
   );
 }
+
 
 function FieldShell({
   label,
