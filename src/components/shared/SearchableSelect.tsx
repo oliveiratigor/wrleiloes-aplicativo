@@ -98,7 +98,7 @@ export function SearchableSelect({
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-        <DrawerContent className="h-[50vh]">
+        <DrawerContent className="h-[50vh] bg-white">
           <DrawerHeader className="pb-2">
             <DrawerTitle className="text-base">{title ?? placeholder}</DrawerTitle>
           </DrawerHeader>
