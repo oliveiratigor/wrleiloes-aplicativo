@@ -129,7 +129,14 @@ function CadastroPage() {
 
   async function saveStep3() {
     if (!user?.uuid) {
-      setError("Sessão sem identidade — refaça login.");
+      await signOut();
+      navigate({
+        to: "/auth",
+        search: {
+          redirect: window.location.pathname + window.location.search,
+        },
+        replace: true,
+      });
       return;
     }
     if (!data.branchId) {
