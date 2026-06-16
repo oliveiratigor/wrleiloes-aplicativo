@@ -59,9 +59,9 @@ export function StepVistoria({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="divide-y divide-border/60">
       <Section title="Motor">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           <Field label="Nº no veículo">
             <Input
               value={form.engineNumberVehicle}
@@ -89,7 +89,7 @@ export function StepVistoria({
       </Section>
 
       <Section title="Chassi">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           <Field label="Nº no veículo">
             <Input
               value={form.chassisNumberVehicle}
@@ -185,16 +185,17 @@ export function StepVistoria({
         )}
       </Section>
 
-      <Field label="Observações gerais">
+      <Section title="Observações gerais">
         <Textarea
           rows={3}
           value={form.notes}
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
         />
-      </Field>
+      </Section>
     </div>
   );
 }
+
 
 function groupBy(list: VerificationStatus[]) {
   const out: Record<
