@@ -226,14 +226,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">{label}</Label>
-      {children}
-    </div>
-  );
-}
+const Field = FormField;
 
 function CheckList({
   options,
