@@ -65,9 +65,9 @@ export function SearchableSelect({
   );
 
   const list = (
-    <Command>
+    <Command className="h-full">
       <CommandInput placeholder="Buscar…" />
-      <CommandList className={isMobile ? "max-h-[60vh]" : undefined}>
+      <CommandList className={isMobile ? "max-h-none flex-1" : undefined}>
         <CommandEmpty>{emptyText}</CommandEmpty>
         <CommandGroup>
           {options.map((o) => (
