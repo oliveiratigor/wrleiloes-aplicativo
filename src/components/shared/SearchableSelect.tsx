@@ -45,7 +45,7 @@ export function SearchableSelect({
             !selected && "text-muted-foreground",
           )}
         >
-          <span className="flex-1 min-w-0 truncate text-left">
+          <span className="flex-1 min-w-0 truncate text-left uppercase">
             {selected?.label ?? placeholder}
           </span>
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -61,6 +61,7 @@ export function SearchableSelect({
                 <CommandItem
                   key={o.value}
                   value={o.label}
+                  className="uppercase"
                   onSelect={() => {
                     onChange(o.value);
                     setOpen(false);
