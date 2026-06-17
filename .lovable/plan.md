@@ -1,22 +1,41 @@
-## Causa
+## Plano: investigação THA1988 + correção
 
-`src/routes/_authenticated/cadastro.$placa.tsx` virou rota-pai de `cadastro.$placa.sucesso.tsx` por causa do file-based routing (dot-naming cria relação pai/filho). Como o arquivo pai renderiza o wizard inteiro em vez de `<Outlet />`, ao acessar `/cadastro/THA1988/sucesso` o TanStack monta a página pai (o wizard volta para "Etapa 1 de 4 — Veículo") e a tela de sucesso nunca aparece. A URL muda corretamente, mas visualmente parece que "voltou pra home".
+**Pré-requisito (você):** ativar "Read database" como Always allow em Lovable Cloud → Settings. Sem isso eu não consigo rodar SQL daqui.
 
-## Correção
+### 1. Investigação SQL (eu rodo)
 
-Separar layout e leaf:
+Três queries para isolar a causa:
 
-1. Renomear o arquivo atual do wizard para um leaf:
-   - `cadastro.$placa.tsx` → `cadastro.$placa.index.tsx` (mantém todo o conteúdo do wizard; só a string em `createFileRoute` muda para `/_authenticated/cadastro/$placa/`).
+1. **Janela do upload** — `media` criadas entre 10:00–10:30 de 16/06/2026 (id, product_id, product_entry_id, account_id, url, status, created_at, deleted_at).
+2. **Identificação do veículo** — `products` e `product_entries` com placa `THA1988` (id, account_id, created_at).
+3. **Histórico de mídias do veículo** — todas as `media` ligadas ao produto THA1988, incluindo soft-deletadas, para ver se a foto nova existe mas está invisível.
 
-2. Criar um novo `cadastro.$placa.tsx` minimalista que serve apenas como layout:
-   ```tsx
-   import { createFileRoute, Outlet } from "@tanstack/react-router";
-   export const Route = createFileRoute("/_authenticated/cadastro/$placa")({
-     component: () => <Outlet />,
-   });
-   ```
+### 2. Diagnóstico esperado (uma destas hipóteses)
 
-3. `cadastro.$placa.sucesso.tsx` continua igual — agora renderiza dentro do `<Outlet />` do layout.
+- **A. Foto não existe na tabela** → INSERT silenciosamente falhou (RLS). Olhar policies de `media` INSERT.
+- **B. Foto existe mas com `account_id`/`product_entry_id` divergente** → tenant errado; back office filtra e não acha. O hardening já no `upload.ts` previne novos casos, mas precisa de migration corrigindo o registro órfão.
+- **C. Foto existe e correta, mas a antiga continua ativa (`deleted_at IS NULL`)** → soft-delete bloqueado por RLS; back office mostra a antiga. Ajustar policy UPDATE de `media`.
+- **D. Foto no S3 mas URL nunca persistida** → erro entre PUT S3 e INSERT; checar logs.
 
-Sem mudanças em business logic, navegação ou no `finishVistoria`. Depois, validar abrindo `/cadastro/THA1988/sucesso?mode=edit&approval=approved` no preview e refazendo um fluxo completo até "Concluir".
+### 3. Correção (conforme achado)
+
+- **Se A ou C** → migration ajustando RLS policies de `media` (INSERT/UPDATE escopados a `account_id` do usuário via `has_role`/perfil).
+- **Se B** → migration corretiva no registro do THA1988 + revisar de onde vinha o `accountId` errado no `StepFotos` (provavelmente prop ou contexto).
+- **Se D** → adicionar log estruturado no `uploadFotoDirect` e investigar logs do worker.
+
+### 4. Bug paralelo (campos que logam mas não persistem)
+
+Inspecionar `src/lib/api/cadastro.ts` (chamada à edge function `cadastrar-produto`):
+- Verificar se a resposta é checada por erro
+- Verificar invalidate do React Query após mutation
+- Conferir RLS na tabela alvo
+Se for edge function, ler `supabase/functions/cadastrar-produto/index.ts`.
+
+### Entregáveis
+
+- Relatório do que o SQL mostrou
+- Migration(s) de correção (RLS e/ou dado)
+- Patch no front se necessário (`accountId`, invalidate)
+- Confirmação de que o registro do THA1988 fica visível no back office
+
+Me avisa quando o "Read database" estiver como Always allow que eu disparo as queries.
