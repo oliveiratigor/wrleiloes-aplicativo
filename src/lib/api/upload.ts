@@ -23,6 +23,13 @@ export type UploadResult = { mediaId: string; url: string; size: number };
  *  5. insert em media com status 'uploaded'
  */
 export async function uploadFotoDirect(p: UploadParams): Promise<UploadResult> {
+  // Validação defensiva — evita INSERT em `media` com IDs inválidos que tornam
+  // a foto invisível pro back office mesmo com upload bem-sucedido no S3.
+  if (!p.accountId) throw new Error("accountId ausente — foto não pode ser associada à conta");
+  if (!p.productId) throw new Error("productId ausente — foto não pode ser associada ao veículo");
+  if (!p.entryId) throw new Error("entryId ausente — foto não pode ser associada à entrada da vistoria");
+  if (!Number.isFinite(p.photoTypeId)) throw new Error("photoTypeId inválido");
+
   const compressed = await compressImage(p.file, { maxDim: 1600, quality: 0.85 });
   const blob = compressed.blob;
   const contentType = compressed.mimeType;
@@ -48,23 +55,29 @@ export async function uploadFotoDirect(p: UploadParams): Promise<UploadResult> {
     throw new Error(`Upload S3 falhou (${putRes.status})`);
   }
 
-  // 3. soft-delete da anterior (mesmo entry + photo_type)
-  const { data: prev } = await supabase
+  // 3. soft-delete da anterior (mesmo entry + photo_type) — agora com checagem de erro
+  const { data: prev, error: prevErr } = await supabase
     .from("media")
     .select("id")
     .eq("product_id", p.productId)
     .eq("product_entry_id", p.entryId)
     .eq("photo_type_id", p.photoTypeId)
-    .is("deleted_at", null)
-    .limit(1);
+    .is("deleted_at", null);
+  if (prevErr) throw new Error(`Falha ao verificar foto anterior: ${prevErr.message}`);
   if (prev && prev.length > 0) {
-    await supabase
+    const { error: softDelErr } = await supabase
       .from("media")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", prev[0].id);
+      .in(
+        "id",
+        prev.map((r) => r.id),
+      );
+    // Se o soft-delete falhar (ex.: RLS), abortamos: senão ficaríamos com 2 fotos
+    // ativas pro mesmo slot e o back office mostraria a antiga.
+    if (softDelErr) throw new Error(`Falha ao remover foto anterior: ${softDelErr.message}`);
   }
 
-  // 4. insert nova
+  // 4. insert nova — com .select() pra forçar retorno e detectar bloqueio de RLS silencioso
   const { data: row, error: insertErr } = await supabase
     .from("media")
     .insert({
@@ -78,9 +91,18 @@ export async function uploadFotoDirect(p: UploadParams): Promise<UploadResult> {
       size: blob.size,
       status: "uploaded",
     })
-    .select("id")
+    .select("id, account_id, product_id, product_entry_id")
     .single();
-  if (insertErr) throw new Error(insertErr.message);
+  if (insertErr) throw new Error(`Falha ao registrar foto: ${insertErr.message}`);
+  if (!row) throw new Error("Foto enviada ao S3 mas não pôde ser registrada (RLS bloqueou o INSERT)");
+  // Sanity-check: o que voltou do banco bate com o que mandamos?
+  if (
+    row.account_id !== p.accountId ||
+    row.product_id !== p.productId ||
+    row.product_entry_id !== p.entryId
+  ) {
+    throw new Error("Inconsistência ao registrar foto: IDs retornados não conferem");
+  }
 
   return { mediaId: row.id, url: file.final_url, size: blob.size };
 }
