@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Camera, Check, Loader2, RefreshCw, X } from "lucide-react";
+import { Camera, Check, ImagePlus, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -223,7 +223,7 @@ export function StepFotos({
                   className="h-7 w-7"
                   onClick={() => inputsRef.current[s.type.id]?.click()}
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
+                  <ImagePlus className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
