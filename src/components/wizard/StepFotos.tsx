@@ -161,32 +161,50 @@ export function StepFotos({
     onAllRequiredDone?.(allDone);
   }, [slots, onAllRequiredDone, bypassFotos]);
 
-  function onPick(typeId: string, file: File | null) {
-    if (!file) return;
+  async function uploadSingle(slot: Slot, file: File) {
     setSlots((prev) =>
       prev.map((s) =>
-        s.type.id === typeId
-          ? { ...s, file, status: "queued", error: undefined }
+        s.type.id === slot.type.id
+          ? { ...s, file, status: "uploading", error: undefined }
           : s,
       ),
     );
-  }
-
-  async function uploadPending() {
-    const pending = slots.filter((s) => s.file && s.status !== "done");
-    if (pending.length === 0) return;
-    setSlots((prev) =>
-      prev.map((s) =>
-        pending.find((p) => p.type.id === s.type.id) ? { ...s, status: "uploading" } : s,
-      ),
-    );
-    await runWithConcurrency(pending, async (slot) => {
+    try {
+      const res = await uploadFotoWithFallback({
+        file,
+        productId,
+        entryId,
+        photoTypeId: Number(slot.type.id),
+        accountId,
+      });
+      setSlots((prev) =>
+        prev.map((s) =>
+          s.type.id === slot.type.id
+            ? {
+                ...s,
+                status: "done",
+                uploadedUrl: res.url,
+                mediaId: res.mediaId,
+                file: undefined,
+                queuedId: undefined,
+                queuedAttempts: undefined,
+                error: undefined,
+              }
+            : s,
+        ),
+      );
+    } catch (err) {
       try {
-        const res = await uploadFotoWithFallback({
-          file: slot.file!,
+        const compressed = await compressImage(file, {
+          maxDim: 1600,
+          quality: 0.85,
+        });
+        const queuedId = await enqueueUpload({
+          blob: compressed.blob,
+          mimeType: compressed.mimeType,
+          photoTypeId: Number(slot.type.id),
           productId,
           entryId,
-          photoTypeId: Number(slot.type.id),
           accountId,
         });
         setSlots((prev) =>
@@ -194,61 +212,42 @@ export function StepFotos({
             s.type.id === slot.type.id
               ? {
                   ...s,
-                  status: "done",
-                  uploadedUrl: res.url,
-                  mediaId: res.mediaId,
-                  file: undefined,
-                  queuedId: undefined,
-                  queuedAttempts: undefined,
-                  error: undefined,
+                  status: "error",
+                  error: "Salvando para reenvio…",
+                  queuedId,
+                  queuedAttempts: 0,
                 }
               : s,
           ),
         );
-      } catch (err) {
-        // Falhou direto e fallback — enfileira pra retry em background.
-        try {
-          const compressed = await compressImage(slot.file!, {
-            maxDim: 1600,
-            quality: 0.85,
-          });
-          const queuedId = await enqueueUpload({
-            blob: compressed.blob,
-            mimeType: compressed.mimeType,
-            photoTypeId: Number(slot.type.id),
-            productId,
-            entryId,
-            accountId,
-          });
-          setSlots((prev) =>
-            prev.map((s) =>
-              s.type.id === slot.type.id
-                ? {
-                    ...s,
-                    status: "error",
-                    error: "Salvando para reenvio…",
-                    queuedId,
-                    queuedAttempts: 0,
-                  }
-                : s,
-            ),
-          );
-        } catch {
-          setSlots((prev) =>
-            prev.map((s) =>
-              s.type.id === slot.type.id
-                ? {
-                    ...s,
-                    status: "error",
-                    error: err instanceof Error ? err.message : String(err),
-                  }
-                : s,
-            ),
-          );
-        }
+      } catch {
+        setSlots((prev) =>
+          prev.map((s) =>
+            s.type.id === slot.type.id
+              ? {
+                  ...s,
+                  status: "error",
+                  error: err instanceof Error ? err.message : String(err),
+                }
+              : s,
+          ),
+        );
       }
-    });
+    }
   }
+
+  function onFileChange(slot: Slot, file: File | null) {
+    if (!file) return;
+    void uploadSingle(slot, file);
+  }
+
+  function retrySlot(slot: Slot) {
+    if (slot.file) void uploadSingle(slot, slot.file);
+    else inputsRef.current[slot.type.id]?.click();
+  }
+
+  // Mantido para compatibilidade com retryQueued (não exposto na UI).
+  void runWithConcurrency;
 
   function clearSlot(typeId: string) {
     setSlots((prev) =>
