@@ -48,7 +48,7 @@ function BuscarPage() {
     }
     setLoading(true);
     try {
-      const buscarPayload = id.kind === "plate" ? { plate: id.plate } : { renavam: id.renavam };
+      const buscarPayload = id.kind === "plate" ? { plate: id.plate } : { chassis: id.chassis };
       const [busca, consulta] = await Promise.all([
         buscarProduto(buscarPayload),
         id.kind === "plate"
@@ -69,7 +69,7 @@ function BuscarPage() {
 
       if (!busca.found || !busca.data) {
         if (id.kind !== "plate") {
-          setError("Renavam não encontrado. Para novo cadastro, busque pela placa.");
+          setError("Chassi não encontrado. Para novo cadastro, busque pela placa.");
           return;
         }
         const wiz = emptyWizard(id.plate, "new");
