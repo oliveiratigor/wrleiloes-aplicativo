@@ -21,8 +21,10 @@ type Slot = {
   file?: File;
   uploadedUrl?: string;
   mediaId?: string;
-  status: "idle" | "queued" | "uploading" | "done" | "error";
+  status: "idle" | "queued" | "uploading" | "done" | "error" | "retrying";
   error?: string;
+  queuedId?: string;
+  queuedAttempts?: number;
 };
 
 export function StepFotos({
@@ -73,7 +75,13 @@ export function StepFotos({
       return;
     }
     const required = slots.filter((s) => s.type.is_required);
-    const allDone = required.every((s) => s.status === "done");
+    // Consideramos "completa" uma foto enviada OU em fila de retry (<3 tentativas) —
+    // não bloqueia o inspector por falhas transitórias de rede.
+    const allDone = required.every(
+      (s) =>
+        s.status === "done" ||
+        (s.queuedId !== undefined && (s.queuedAttempts ?? 0) < 3),
+    );
     onAllRequiredDone?.(allDone);
   }, [slots, onAllRequiredDone, bypassFotos]);
 
@@ -98,7 +106,7 @@ export function StepFotos({
     );
     await runWithConcurrency(pending, async (slot) => {
       try {
-        const res = await uploadFotoDirect({
+        const res = await uploadFotoWithFallback({
           file: slot.file!,
           productId,
           entryId,
@@ -114,18 +122,54 @@ export function StepFotos({
                   uploadedUrl: res.url,
                   mediaId: res.mediaId,
                   file: undefined,
+                  queuedId: undefined,
+                  queuedAttempts: undefined,
+                  error: undefined,
                 }
               : s,
           ),
         );
       } catch (err) {
-        setSlots((prev) =>
-          prev.map((s) =>
-            s.type.id === slot.type.id
-              ? { ...s, status: "error", error: err instanceof Error ? err.message : String(err) }
-              : s,
-          ),
-        );
+        // Falhou direto e fallback — enfileira pra retry em background.
+        try {
+          const compressed = await compressImage(slot.file!, {
+            maxDim: 1600,
+            quality: 0.85,
+          });
+          const queuedId = await enqueueUpload({
+            blob: compressed.blob,
+            mimeType: compressed.mimeType,
+            photoTypeId: Number(slot.type.id),
+            productId,
+            entryId,
+            accountId,
+          });
+          setSlots((prev) =>
+            prev.map((s) =>
+              s.type.id === slot.type.id
+                ? {
+                    ...s,
+                    status: "error",
+                    error: "Salvando para reenvio…",
+                    queuedId,
+                    queuedAttempts: 0,
+                  }
+                : s,
+            ),
+          );
+        } catch {
+          setSlots((prev) =>
+            prev.map((s) =>
+              s.type.id === slot.type.id
+                ? {
+                    ...s,
+                    status: "error",
+                    error: err instanceof Error ? err.message : String(err),
+                  }
+                : s,
+            ),
+          );
+        }
       }
     });
   }
