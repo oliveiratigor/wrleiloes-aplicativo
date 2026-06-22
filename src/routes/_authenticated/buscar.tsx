@@ -158,7 +158,7 @@ function BuscarPage() {
             Pesquisar veículo
           </h1>
           <p className="text-sm text-muted-foreground">
-            Digite a placa para localizar ou iniciar um novo cadastro.
+            Digite a placa ou chassi para localizar ou iniciar um novo cadastro.
           </p>
         </div>
 
