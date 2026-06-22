@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { apiCall } from "@/lib/api";
 import { compressImage } from "@/lib/image/compress";
+import { dequeue } from "@/lib/upload-queue";
 import type { PresignResponse } from "./types";
 
 export type UploadParams = {
