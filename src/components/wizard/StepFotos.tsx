@@ -194,12 +194,15 @@ export function StepFotos({
         ),
       );
     } catch (err) {
+      // Todas as 3 tentativas de rede falharam.
+      // Comprimir e enfileirar no IndexedDB para retry quando a rede voltar.
+      let queuedId: string | undefined;
       try {
         const compressed = await compressImage(file, {
           maxDim: 1600,
           quality: 0.85,
         });
-        const queuedId = await enqueueUpload({
+        queuedId = await enqueueUpload({
           blob: compressed.blob,
           mimeType: compressed.mimeType,
           photoTypeId: Number(slot.type.id),
@@ -207,32 +210,26 @@ export function StepFotos({
           entryId,
           accountId,
         });
-        setSlots((prev) =>
-          prev.map((s) =>
-            s.type.id === slot.type.id
-              ? {
-                  ...s,
-                  status: "error",
-                  error: "Salvando para reenvio…",
-                  queuedId,
-                  queuedAttempts: 0,
-                }
-              : s,
-          ),
-        );
       } catch {
-        setSlots((prev) =>
-          prev.map((s) =>
-            s.type.id === slot.type.id
-              ? {
-                  ...s,
-                  status: "error",
-                  error: err instanceof Error ? err.message : String(err),
-                }
-              : s,
-          ),
-        );
+        // Se até a compressão/enqueue falhar, pelo menos marca o erro
       }
+      setSlots((prev) =>
+        prev.map((s) =>
+          s.type.id === slot.type.id
+            ? {
+                ...s,
+                status: "error",
+                error: queuedId
+                  ? "Sem conexão — foto salva localmente para reenvio"
+                  : err instanceof Error
+                    ? err.message
+                    : String(err),
+                queuedId,
+                queuedAttempts: 0,
+              }
+            : s,
+        ),
+      );
     }
   }
 
