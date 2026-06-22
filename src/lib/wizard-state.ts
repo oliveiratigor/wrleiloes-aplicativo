@@ -18,6 +18,7 @@ export type WizardState = {
   brand: string;
   model: string;
   color: string;
+  colorId: string;
   fuel: string;
   yearManufacture: string;
   yearModel: string;
