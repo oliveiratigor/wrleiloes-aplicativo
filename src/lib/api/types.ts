@@ -100,6 +100,7 @@ export type CadastrarProdutoPayload = {
     fuel?: string | null;
     fipe_codigo?: string | null;
     price?: number | null;
+    year?: string | null;
   };
   item_attributes?: { uuid: string; value: string | null }[];
 };
