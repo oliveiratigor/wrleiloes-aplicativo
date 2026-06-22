@@ -8,7 +8,17 @@ import { BottomActionBar, BottomBarButton } from "@/components/mobile/BottomActi
 import { PlateInput } from "@/components/mobile/PlateInput";
 import { buscarProduto, detectIdentifier, hasOpenEntry } from "@/lib/api/buscar";
 import { consultaVeiculo } from "@/lib/api/consulta";
-import { saveWizard, emptyWizard, type WizardState } from "@/lib/wizard-state";
+import { saveWizard, emptyWizard, type WizardState, type WizardMode } from "@/lib/wizard-state";
+import { cn } from "@/lib/utils";
+
+type FoundResult = {
+  plate: string;
+  brand: string;
+  model: string;
+  color: string;
+  mode: WizardMode;
+  wiz: WizardState;
+};
 
 const RECENT_KEY = "wr-recent-plates";
 
