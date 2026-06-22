@@ -23,7 +23,7 @@ export function StepEntrada({
 }) {
   const { user } = useAuth();
   const filiais = useSuspenseQuery(filiaisQueryFor(user)).data;
-  const depositos = useSuspenseQuery(depositosQuery).data;
+  const depositos = useSuspenseQuery(depositosQueryFor(data.branchId)).data;
   const comitentes = useSuspenseQuery(comitentesQueryFor(user)).data;
   const tiposEntrada = useSuspenseQuery(tiposEntradaQuery).data;
 
