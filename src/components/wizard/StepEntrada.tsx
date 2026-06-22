@@ -6,7 +6,7 @@ import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { FormField } from "@/components/shared/FormField";
 import {
   filiaisQueryFor,
-  depositosQuery,
+  depositosQueryFor,
   comitentesQueryFor,
   tiposEntradaQuery,
 } from "@/lib/api/lookups";
@@ -23,7 +23,7 @@ export function StepEntrada({
 }) {
   const { user } = useAuth();
   const filiais = useSuspenseQuery(filiaisQueryFor(user)).data;
-  const depositos = useSuspenseQuery(depositosQuery).data;
+  const depositos = useSuspenseQuery(depositosQueryFor(data.branchId)).data;
   const comitentes = useSuspenseQuery(comitentesQueryFor(user)).data;
   const tiposEntrada = useSuspenseQuery(tiposEntradaQuery).data;
 
@@ -36,6 +36,14 @@ export function StepEntrada({
     if (singleBranch && !data.branchId) update({ branchId: filiais[0].value });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [singleBranch]);
+
+  // Limpa depositId quando a filial muda e o depósito atual não pertence a ela
+  useEffect(() => {
+    if (!data.depositId) return;
+    const valid = depositos.some((d) => d.value === data.depositId);
+    if (!valid) update({ depositId: "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.branchId, depositos]);
 
   const branchForbidden = useMemo(() => {
     if (!data.branchId || isAdmin) return false;
