@@ -54,6 +54,7 @@ export function emptyWizard(plate: string, mode: WizardMode = "new"): WizardStat
     brand: "",
     model: "",
     color: "",
+    colorId: "",
     fuel: "",
     yearManufacture: "",
     yearModel: "",
