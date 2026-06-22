@@ -8,7 +8,17 @@ import { BottomActionBar, BottomBarButton } from "@/components/mobile/BottomActi
 import { PlateInput } from "@/components/mobile/PlateInput";
 import { buscarProduto, detectIdentifier, hasOpenEntry } from "@/lib/api/buscar";
 import { consultaVeiculo } from "@/lib/api/consulta";
-import { saveWizard, emptyWizard, type WizardState } from "@/lib/wizard-state";
+import { saveWizard, emptyWizard, type WizardState, type WizardMode } from "@/lib/wizard-state";
+import { cn } from "@/lib/utils";
+
+type FoundResult = {
+  plate: string;
+  brand: string;
+  model: string;
+  color: string;
+  mode: WizardMode;
+  wiz: WizardState;
+};
 
 const RECENT_KEY = "wr-recent-plates";
 
@@ -23,6 +33,7 @@ function BuscarPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
+  const [found, setFound] = useState<FoundResult | null>(null);
 
   useEffect(() => {
     try {
@@ -41,6 +52,7 @@ function BuscarPage() {
 
   async function runSearch(value: string) {
     setError(null);
+    setFound(null);
     const id = detectIdentifier(value);
     if (id.kind === "invalid") {
       setError(id.reason);
@@ -76,14 +88,18 @@ function BuscarPage() {
         if (consulta.data) {
           applyConsulta(wiz, consulta.data);
         } else {
-          // FIPE sem dados → modo manual (veículo estrangeiro ou não cadastrado)
           wiz.isManual = true;
         }
-        saveWizard(wiz);
         pushRecent(id.plate);
-        navigate({ to: "/cadastro/$placa", params: { placa: id.plate }, search: { step: 2 } });
+        setFound({
+          plate: id.plate,
+          brand: wiz.brand,
+          model: wiz.model,
+          color: wiz.color,
+          mode: "new",
+          wiz,
+        });
         return;
-
       }
 
       const { product, fipe_data } = busca.data;
@@ -109,19 +125,31 @@ function BuscarPage() {
       wiz.depositId = product.deposit_uuid ?? "";
       wiz.principalId = product.consignor_uuid ?? "";
       wiz.entryTypeId = product.entry_type_uuid ?? "";
-      saveWizard(wiz);
 
       pushRecent(navPlate || product.plate);
-      navigate({
-        to: "/cadastro/$placa",
-        params: { placa: navPlate || product.plate },
-        search: { step: 3 },
+      setFound({
+        plate: navPlate || product.plate,
+        brand: wiz.brand,
+        model: wiz.model,
+        color: wiz.color,
+        mode,
+        wiz,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function confirmFound() {
+    if (!found) return;
+    saveWizard(found.wiz);
+    navigate({
+      to: "/cadastro/$placa",
+      params: { placa: found.plate },
+      search: { step: found.mode === "new" ? 2 : 3 },
+    });
   }
 
   function onSubmit(e: React.FormEvent) {
@@ -174,7 +202,10 @@ function BuscarPage() {
             autoFocus
             placeholder="ABC1D23"
             value={query}
-            onValueChange={setQuery}
+            onValueChange={(v) => {
+              setQuery(v);
+              if (found) setFound(null);
+            }}
           />
         </div>
 
@@ -185,7 +216,69 @@ function BuscarPage() {
         )}
       </form>
 
-      {recent.length > 0 && (
+      {found && (
+        <div className="mt-6 space-y-4 rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-mono text-lg font-black tracking-widest">
+              {found.plate}
+            </span>
+            <span
+              className={cn(
+                "rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider",
+                found.mode === "edit"
+                  ? "bg-amber-100 text-amber-800"
+                  : found.mode === "reentry"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-green-100 text-green-800",
+              )}
+            >
+              {found.mode === "edit"
+                ? "Entrada em aberto"
+                : found.mode === "reentry"
+                  ? "Nova entrada"
+                  : "Novo veículo"}
+            </span>
+          </div>
+
+          {(found.brand || found.model || found.color) && (
+            <div className="space-y-1">
+              {(found.brand || found.model) && (
+                <p className="text-base font-semibold text-foreground">
+                  {[found.brand, found.model].filter(Boolean).join(" ")}
+                </p>
+              )}
+              {found.color && (
+                <p className="text-sm text-muted-foreground">{found.color}</p>
+              )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={confirmFound}
+            className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground transition active:scale-[0.98]"
+          >
+            {found.mode === "edit"
+              ? "Continuar edição"
+              : found.mode === "reentry"
+                ? "Iniciar nova entrada"
+                : "Cadastrar veículo"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setFound(null);
+              setQuery("");
+            }}
+            className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+          >
+            Buscar outro veículo
+          </button>
+        </div>
+      )}
+
+      {!found && recent.length > 0 && (
         <div className="mt-8 space-y-3">
           <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
