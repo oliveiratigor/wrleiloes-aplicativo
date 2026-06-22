@@ -32,6 +32,8 @@ export type WizardState = {
   chargeTowing: boolean;
   kmInitial: string;
   kmFinal: string;
+  // passo 4 — características
+  attributeIds: string[];
 };
 
 export function emptyWizard(plate: string, mode: WizardMode = "new"): WizardState {
@@ -59,6 +61,7 @@ export function emptyWizard(plate: string, mode: WizardMode = "new"): WizardStat
     chargeTowing: false,
     kmInitial: "",
     kmFinal: "",
+    attributeIds: [],
   };
 }
 

@@ -12,6 +12,7 @@ import { Stepper } from "@/components/wizard/Stepper";
 import { StepVeiculo } from "@/components/wizard/StepVeiculo";
 import { StepEntrada } from "@/components/wizard/StepEntrada";
 import { StepFotos } from "@/components/wizard/StepFotos";
+import { StepCaracteristicas } from "@/components/wizard/StepCaracteristicas";
 import {
   StepVistoria,
   emptyVistoria,
@@ -35,12 +36,13 @@ import { supabase } from "@/lib/supabase";
 const STEPS = [
   { id: 2, label: "Veículo" },
   { id: 3, label: "Entrada" },
-  { id: 4, label: "Fotos" },
-  { id: 5, label: "Vistoria" },
+  { id: 4, label: "Caract." },
+  { id: 5, label: "Fotos" },
+  { id: 6, label: "Vistoria" },
 ];
 
 const searchSchema = z.object({
-  step: z.coerce.number().min(2).max(5).catch(2),
+  step: z.coerce.number().min(2).max(6).catch(2),
 });
 
 export const Route = createFileRoute("/_authenticated/cadastro/$placa/")({
@@ -233,6 +235,24 @@ function CadastroPage() {
         rejectionNotes: vistoria.rejectionNotes || null,
         notes: vistoria.notes || null,
       });
+      // Persiste atributos (características) selecionados — replace strategy
+      try {
+        await supabase
+          .from("product_attributes")
+          .delete()
+          .eq("product_entry_id", data.entryId);
+        if (data.attributeIds.length > 0) {
+          await supabase.from("product_attributes").insert(
+            data.attributeIds.map((id) => ({
+              product_entry_id: data.entryId,
+              attribute_id: id,
+              value: "true",
+            })),
+          );
+        }
+      } catch (err) {
+        console.error("[finishVistoria] falha ao salvar atributos", err);
+      }
       const finishedMode = data.mode;
       const finishedApproval = vistoria.finalApproval || "none";
       clearWizard(data.plate);
@@ -275,11 +295,16 @@ function CadastroPage() {
         </BottomBarButton>
       )}
       {step === 4 && (
-        <BottomBarButton onClick={() => go(5)} disabled={!requiredOk}>
-          Ir para vistoria
+        <BottomBarButton onClick={() => go(5)} disabled={!data.entryId}>
+          Ir para fotos
         </BottomBarButton>
       )}
       {step === 5 && (
+        <BottomBarButton onClick={() => go(6)} disabled={!requiredOk}>
+          Ir para vistoria
+        </BottomBarButton>
+      )}
+      {step === 6 && (
         <BottomBarButton
           onClick={finishVistoria}
           disabled={saving || !data.entryId}
@@ -359,6 +384,16 @@ function CadastroPage() {
 
           {step === 4 && (
             <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+              <StepCaracteristicas
+                entryId={data.entryId}
+                selectedIds={data.attributeIds}
+                onChange={(ids) => update({ attributeIds: ids })}
+              />
+            </Suspense>
+          )}
+
+          {step === 5 && (
+            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
               {data.productId && data.entryId && account?.id ? (
                 <StepFotos
                   productId={data.productId}
@@ -376,7 +411,7 @@ function CadastroPage() {
             </Suspense>
           )}
 
-          {step === 5 && (
+          {step === 6 && (
             <Suspense fallback={<Skeleton className="h-96 w-full" />}>
               <StepVistoria form={vistoria} setForm={setVistoria} />
             </Suspense>
