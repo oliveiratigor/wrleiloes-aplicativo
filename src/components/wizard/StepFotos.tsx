@@ -237,7 +237,7 @@ export function StepFotos({
 
   function onFileChange(slot: Slot, file: File | null) {
     if (!file) return;
-    void uploadSingle(slot, file);
+    setEditingFile({ file, slot });
   }
 
   function retrySlot(slot: Slot) {
