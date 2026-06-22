@@ -50,7 +50,7 @@ export function StepFotos({
     (async () => {
       const { data } = await supabase
         .from("media")
-        .select("id, url, photo_type_id")
+        .select("id, url, photo_type_id, status")
         .eq("product_id", productId)
         .eq("product_entry_id", entryId)
         .is("deleted_at", null);
@@ -58,7 +58,9 @@ export function StepFotos({
       setSlots((prev) =>
         prev.map((s) => {
           const m = data.find((d) => String(d.photo_type_id) === s.type.id);
-          return m ? { ...s, mediaId: m.id, uploadedUrl: m.url, status: "done" } : s;
+          if (!m) return s;
+          const isDone = m.status === "uploaded" || m.status === "buffered";
+          return { ...s, mediaId: m.id, uploadedUrl: m.url, status: isDone ? "done" : "idle" };
         }),
       );
     })();

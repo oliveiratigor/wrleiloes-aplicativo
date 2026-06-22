@@ -144,6 +144,7 @@ export async function runWithConcurrency<T>(
 export async function uploadFotoWithFallback(
   p: UploadParams & { queueId?: string },
 ): Promise<UploadResult> {
+  // Tentativa 1: PUT direto S3 via presign
   try {
     const result = await uploadFotoDirect(p);
     if (p.queueId) await dequeue(p.queueId);
@@ -157,42 +158,124 @@ export async function uploadFotoWithFallback(
       errMsg.includes("URL") ||
       errMsg.includes("network") ||
       errMsg.includes("NetworkError");
-
     if (!isNetworkError) throw s3Err;
+  }
 
-    const compressed = await compressImage(p.file, { maxDim: 1600, quality: 0.85 });
-    const base64 = await blobToBase64(compressed.blob);
+  // Tentativa 2: enviar via app-s3-upload (FormData, CORS *)
+  const compressed = await compressImage(p.file, { maxDim: 1600, quality: 0.85 });
+  const ext = compressed.mimeType === "image/png" ? "png" : "jpg";
+  const s3Path = `media/${p.accountId}/${p.productId}/${p.photoTypeId}_${Date.now()}.${ext}`;
 
-    const { data: fallbackResult, error: fallbackErr } = await apiCall<
-      Record<string, unknown>,
-      { id: string; url: string }
-    >("app-s3-upload", {
-      action: "upload",
-      photo_type_id: p.photoTypeId,
-      product_id: p.productId,
-      product_entry_id: p.entryId,
-      account_id: p.accountId,
-      file_data: base64,
-      content_type: compressed.mimeType,
+  try {
+    const form = new FormData();
+    form.append(
+      "file",
+      new Blob([await compressed.blob.arrayBuffer()], { type: compressed.mimeType }),
+      `photo.${ext}`,
+    );
+    form.append("path", s3Path);
+    form.append("content_type", compressed.mimeType);
+
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+    const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/app-s3-upload`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${ANON_KEY}` },
+      body: form,
     });
+    if (!res.ok) throw new Error(`app-s3-upload falhou: ${res.status}`);
+    const json = (await res.json()) as { url: string; path: string };
 
-    if (fallbackErr || !fallbackResult) {
-      throw new Error(fallbackErr ?? "Fallback upload falhou");
+    // Soft-delete da anterior
+    const { data: prev } = await supabase
+      .from("media")
+      .select("id")
+      .eq("product_id", p.productId)
+      .eq("product_entry_id", p.entryId)
+      .eq("photo_type_id", p.photoTypeId)
+      .is("deleted_at", null);
+    if (prev?.length) {
+      await supabase
+        .from("media")
+        .update({ deleted_at: new Date().toISOString() })
+        .in("id", prev.map((r) => r.id));
     }
+
+    const { data: row, error: insertErr } = await supabase
+      .from("media")
+      .insert({
+        account_id: p.accountId,
+        product_id: p.productId,
+        product_entry_id: p.entryId,
+        photo_type_id: p.photoTypeId,
+        url: json.url,
+        path: json.path,
+        mime_type: compressed.mimeType,
+        size: compressed.blob.size,
+        status: "uploaded",
+      })
+      .select("id")
+      .single();
+    if (insertErr || !row) throw new Error(`Registro falhou: ${insertErr?.message}`);
+
+    if (p.queueId) await dequeue(p.queueId);
+    return { mediaId: row.id, url: json.url, size: compressed.blob.size };
+  } catch {
+    // Tentativa 3: buffer no Supabase Storage (media-temp)
+    const bufferPath = `${p.accountId}/${p.productId}/${p.photoTypeId}_${Date.now()}.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("media-temp")
+      .upload(bufferPath, compressed.blob, {
+        contentType: compressed.mimeType,
+        upsert: true,
+      });
+    if (uploadErr) throw new Error(`Buffer upload falhou: ${uploadErr.message}`);
+
+    const { data: prev } = await supabase
+      .from("media")
+      .select("id")
+      .eq("product_id", p.productId)
+      .eq("product_entry_id", p.entryId)
+      .eq("photo_type_id", p.photoTypeId)
+      .is("deleted_at", null);
+    if (prev?.length) {
+      await supabase
+        .from("media")
+        .update({ deleted_at: new Date().toISOString() })
+        .in("id", prev.map((r) => r.id));
+    }
+
+    const { data: signedUrl } = await supabase.storage
+      .from("media-temp")
+      .createSignedUrl(bufferPath, 60 * 60 * 24 * 31);
+
+    const s3FinalPath = `media/${p.accountId}/${p.productId}/${p.photoTypeId}_${Date.now()}.${ext}`;
+    const { data: row, error: insertErr } = await supabase
+      .from("media")
+      .insert({
+        account_id: p.accountId,
+        product_id: p.productId,
+        product_entry_id: p.entryId,
+        photo_type_id: p.photoTypeId,
+        url: signedUrl?.signedUrl ?? "",
+        path: s3FinalPath,
+        buffer_path: bufferPath,
+        mime_type: compressed.mimeType,
+        size: compressed.blob.size,
+        status: "buffered",
+        buffered_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+    if (insertErr || !row) throw new Error(`Registro buffer falhou: ${insertErr?.message}`);
+
     if (p.queueId) await dequeue(p.queueId);
     return {
-      mediaId: fallbackResult.id,
-      url: fallbackResult.url,
+      mediaId: row.id,
+      url: signedUrl?.signedUrl ?? "",
       size: compressed.blob.size,
     };
   }
-}
-
-async function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(",")[1]);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
 }
