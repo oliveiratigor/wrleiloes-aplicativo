@@ -182,6 +182,7 @@ function CadastroPage() {
         fuel: data.fuel || null,
         fipe_codigo: data.fipeCodigo || null,
         price: data.fipePrice ? Number(data.fipePrice) : null,
+        year: data.yearModel || data.yearManufacture || null,
       },
     });
     setSaving(false);
