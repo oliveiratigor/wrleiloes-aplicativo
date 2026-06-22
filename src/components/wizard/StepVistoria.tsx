@@ -68,7 +68,7 @@ export function StepVistoria({
               className={formFieldClass}
               value={form.engineNumberVehicle}
               onChange={(e) =>
-                setForm({ ...form, engineNumberVehicle: e.target.value })
+                setForm({ ...form, engineNumberVehicle: e.target.value.toUpperCase() })
               }
             />
           </Field>
@@ -77,7 +77,7 @@ export function StepVistoria({
               className={formFieldClass}
               value={form.engineNumberBase}
               onChange={(e) =>
-                setForm({ ...form, engineNumberBase: e.target.value })
+                setForm({ ...form, engineNumberBase: e.target.value.toUpperCase() })
               }
             />
           </Field>
@@ -98,7 +98,7 @@ export function StepVistoria({
               className={formFieldClass}
               value={form.chassisNumberVehicle}
               onChange={(e) =>
-                setForm({ ...form, chassisNumberVehicle: e.target.value })
+                setForm({ ...form, chassisNumberVehicle: e.target.value.toUpperCase() })
               }
             />
           </Field>
@@ -107,7 +107,7 @@ export function StepVistoria({
               className={formFieldClass}
               value={form.chassisNumberBase}
               onChange={(e) =>
-                setForm({ ...form, chassisNumberBase: e.target.value })
+                setForm({ ...form, chassisNumberBase: e.target.value.toUpperCase() })
               }
             />
           </Field>
