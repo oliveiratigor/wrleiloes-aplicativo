@@ -62,11 +62,20 @@ function CadastroPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requiredOk, setRequiredOk] = useState(false);
-  const [vistoria, setVistoria] = useState<VistoriaForm>(emptyVistoria);
+  const [vistoria, setVistoria] = useState<VistoriaForm>(() => {
+    const saved = loadWizard(placa);
+    if (saved?.vistoria) return saved.vistoria;
+    return emptyVistoria();
+  });
 
   useEffect(() => {
-    saveWizard(data);
+    saveWizard({ ...data, vistoria });
   }, [data]);
+
+  useEffect(() => {
+    saveWizard({ ...data, vistoria });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vistoria]);
 
   useEffect(() => {
     if (!data.productId) return;
