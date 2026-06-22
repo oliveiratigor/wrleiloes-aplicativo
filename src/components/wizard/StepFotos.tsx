@@ -67,6 +67,82 @@ export function StepFotos({
     };
   }, [productId, entryId]);
 
+  // Retry de itens da fila local: roda no mount e quando rede volta.
+  const retryQueued = useCallback(async () => {
+    if (!entryId || !accountId) return;
+    const queued = await getQueuedByEntry(entryId);
+    if (queued.length === 0) return;
+    // Marca slots correspondentes como retrying.
+    setSlots((prev) =>
+      prev.map((s) => {
+        const q = queued.find((i) => i.photoTypeId === Number(s.type.id));
+        return q && s.status !== "done"
+          ? { ...s, queuedId: q.id, queuedAttempts: q.attempts, status: "retrying" }
+          : s;
+      }),
+    );
+    for (const item of queued) {
+      if (item.attempts >= 3) continue;
+      try {
+        await incrementQueueAttempts(item.id);
+        const file = new File(
+          [item.blob],
+          `photo_${item.photoTypeId}.jpg`,
+          { type: item.mimeType },
+        );
+        const res = await uploadFotoWithFallback({
+          file,
+          productId: item.productId,
+          entryId: item.entryId,
+          accountId: item.accountId,
+          photoTypeId: item.photoTypeId,
+          queueId: item.id,
+        });
+        setSlots((prev) =>
+          prev.map((s) =>
+            Number(s.type.id) === item.photoTypeId
+              ? {
+                  ...s,
+                  status: "done",
+                  uploadedUrl: res.url,
+                  mediaId: res.mediaId,
+                  file: undefined,
+                  queuedId: undefined,
+                  queuedAttempts: undefined,
+                  error: undefined,
+                }
+              : s,
+          ),
+        );
+      } catch {
+        setSlots((prev) =>
+          prev.map((s) =>
+            Number(s.type.id) === item.photoTypeId
+              ? {
+                  ...s,
+                  status: "error",
+                  error: "Salvando para reenvio…",
+                  queuedAttempts: (s.queuedAttempts ?? 0) + 1,
+                }
+              : s,
+          ),
+        );
+      }
+    }
+  }, [entryId, accountId, productId]);
+
+  useEffect(() => {
+    retryQueued();
+  }, [retryQueued]);
+
+  useEffect(() => {
+    const handler = () => {
+      retryQueued();
+    };
+    window.addEventListener("online", handler);
+    return () => window.removeEventListener("online", handler);
+  }, [retryQueued]);
+
   const bypassFotos = import.meta.env.VITE_BYPASS_FOTOS_REQUIRED === "true";
 
   useEffect(() => {
