@@ -13,6 +13,7 @@ import {
 import { compressImage } from "@/lib/image/compress";
 import { supabase } from "@/lib/supabase";
 import type { PhotoType } from "@/lib/api/types";
+import { PhotoEditor } from "./PhotoEditor";
 
 type Slot = {
   type: PhotoType;
@@ -41,6 +42,7 @@ export function StepFotos({
     photoTypes.map((t) => ({ type: t, status: "idle" })),
   );
   const inputsRef = useRef<Record<string, HTMLInputElement | null>>({});
+  const [editingFile, setEditingFile] = useState<{ file: File; slot: Slot } | null>(null);
 
   // Hidrata fotos já existentes na entrada (caso esteja editando entrada aberta)
   useEffect(() => {
