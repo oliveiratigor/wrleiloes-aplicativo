@@ -231,7 +231,7 @@ function AuthPage() {
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
         >
           <p className="text-[11px] font-medium text-muted-foreground/70">
-            v1.0
+            v{__APP_VERSION__}
           </p>
         </footer>
       </main>
