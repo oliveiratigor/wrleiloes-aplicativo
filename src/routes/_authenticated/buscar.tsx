@@ -33,6 +33,7 @@ function BuscarPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
+  const [found, setFound] = useState<FoundResult | null>(null);
 
   useEffect(() => {
     try {
