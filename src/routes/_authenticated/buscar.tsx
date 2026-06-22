@@ -261,7 +261,7 @@ function BuscarPage() {
           </div>
 
           {(found.brand || found.model) && (
-            <p className="text-base font-semibold text-foreground">
+            <p className="text-base font-semibold uppercase text-foreground">
               {[found.brand, found.model].filter(Boolean).join(" ")}
             </p>
           )}
@@ -273,8 +273,8 @@ function BuscarPage() {
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     Cor
                   </span>
-                  <p className="capitalize text-foreground">
-                    {found.colorName.toLowerCase()}
+                  <p className="uppercase text-foreground">
+                    {found.colorName.toUpperCase()}
                   </p>
                 </div>
               )}
@@ -283,7 +283,7 @@ function BuscarPage() {
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     Motivo
                   </span>
-                  <p className="text-foreground">{found.entryTypeName}</p>
+                  <p className="uppercase text-foreground">{found.entryTypeName}</p>
                 </div>
               )}
               {found.entryDate && (
