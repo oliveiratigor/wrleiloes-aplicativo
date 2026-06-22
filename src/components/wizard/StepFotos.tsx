@@ -260,11 +260,9 @@ export function StepFotos({
   }
 
   const totalDone = slots.filter((s) => s.status === "done").length;
-  const pendingCount = slots.filter((s) => s.file && s.status !== "done").length;
-  const uploading = slots.some((s) => s.status === "uploading");
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {bypassFotos && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           Bypass de fotos ativo — somente para testes. As fotos obrigatórias não estão sendo exigidas.
@@ -275,109 +273,138 @@ export function StepFotos({
           <span>
             {totalDone}/{slots.length} enviadas
           </span>
-          {pendingCount > 0 && <span>{pendingCount} aguardando upload</span>}
         </div>
         <Progress value={(totalDone / Math.max(slots.length, 1)) * 100} />
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        {slots.map((s) => (
-          <div
-            key={s.type.id}
-            className={cn(
-              "relative overflow-hidden rounded-md border bg-muted/30",
-              s.status === "error" && "border-destructive",
-              s.status === "done" && "border-primary/30",
-            )}
-          >
-            <div className="aspect-square w-full">
-              {s.uploadedUrl ? (
-                <img
-                  src={s.uploadedUrl}
-                  alt={s.type.text}
-                  className="h-full w-full object-cover"
-                />
-              ) : s.file ? (
-                <FilePreview file={s.file} />
-              ) : (
-                <div className="flex h-full items-center justify-center text-muted-foreground">
-                  <Camera className="h-7 w-7" />
-                </div>
+      <div className="grid grid-cols-2 gap-3">
+        {slots.map((s) => {
+          const busy = s.status === "uploading" || s.status === "retrying";
+          const isDone = s.status === "done";
+          const isError = s.status === "error";
+          const isQueued = s.status === "queued";
+
+          const btnLabel = busy
+            ? "Enviando…"
+            : isQueued
+              ? "Aguardando envio…"
+              : isError
+                ? "Tentar novamente"
+                : isDone
+                  ? "Trocar foto"
+                  : "Enviar foto";
+
+          const btnClass = cn(
+            "flex w-full items-center justify-center gap-2 rounded-b-2xl px-3 py-3 text-sm font-bold transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70",
+            busy || isQueued
+              ? "bg-muted text-muted-foreground"
+              : isError
+                ? "bg-destructive text-destructive-foreground"
+                : isDone
+                  ? "border-t border-border bg-card text-foreground hover:bg-muted"
+                  : "bg-primary text-primary-foreground",
+          );
+
+          return (
+            <div
+              key={s.type.id}
+              className={cn(
+                "flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm",
+                isError && "border-destructive/60",
+                isDone && "border-primary/40",
               )}
-              {s.status === "uploading" && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/60">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              )}
-              {s.status === "done" && (
-                <div className="absolute right-1 top-1 rounded-full bg-primary p-1 text-primary-foreground">
-                  <Check className="h-3 w-3" />
-                </div>
-              )}
-            </div>
-            <div className="flex items-center justify-between gap-1 p-2">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium">{s.type.text}</p>
-                {s.type.is_required && (
-                  <Badge variant="outline" className="mt-0.5 h-4 px-1 text-[10px]">
-                    obrigatória
-                  </Badge>
+            >
+              <button
+                type="button"
+                onClick={() => inputsRef.current[s.type.id]?.click()}
+                disabled={busy || isQueued}
+                className="relative block h-[180px] w-full overflow-hidden bg-muted"
+              >
+                {s.uploadedUrl ? (
+                  <img
+                    src={s.uploadedUrl}
+                    alt={s.type.text}
+                    className="h-full w-full object-cover"
+                  />
+                ) : s.file ? (
+                  <FilePreview file={s.file} />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <Camera className="h-10 w-10 text-muted-foreground" />
+                  </div>
                 )}
+                {busy && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/60">
+                    <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                  </div>
+                )}
+                {isDone && (
+                  <div className="absolute right-2 top-2 rounded-full bg-primary p-1.5 text-primary-foreground shadow">
+                    <Check className="h-3.5 w-3.5" />
+                  </div>
+                )}
+              </button>
+
+              <div className="px-3 pt-3">
+                <p className="text-sm font-semibold leading-tight text-foreground">
+                  {s.type.text}
+                </p>
+              </div>
+              <div className="px-3 pb-2 pt-1">
+                <span
+                  className={cn(
+                    "text-[10px] font-bold uppercase tracking-wider",
+                    s.type.is_required
+                      ? "text-destructive"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {s.type.is_required ? "Obrigatória" : "Opcional"}
+                </span>
                 {s.error && (
-                  <p className="mt-0.5 truncate text-[10px] text-destructive">
+                  <p className="mt-1 truncate text-[10px] text-destructive">
                     {s.error}
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-1">
-                {(s.file || s.uploadedUrl) && (
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7"
-                    onClick={() => clearSlot(s.type.id)}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="outline"
-                  className="h-7 w-7"
-                  onClick={() => inputsRef.current[s.type.id]?.click()}
-                >
-                  <ImagePlus className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-            <input
-              ref={(el) => {
-                inputsRef.current[s.type.id] = el;
-              }}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => onPick(s.type.id, e.target.files?.[0] ?? null)}
-            />
-          </div>
-        ))}
-      </div>
 
-      <Button
-        type="button"
-        className="w-full"
-        onClick={uploadPending}
-        disabled={pendingCount === 0 || uploading}
-      >
-        {uploading
-          ? "Enviando…"
-          : pendingCount > 0
-            ? `Enviar ${pendingCount} foto(s)`
-            : "Nenhuma foto pendente"}
-      </Button>
+              <div className="mt-auto">
+                <button
+                  type="button"
+                  onClick={() =>
+                    isError ? retrySlot(s) : inputsRef.current[s.type.id]?.click()
+                  }
+                  disabled={busy || isQueued}
+                  className={btnClass}
+                >
+                  {busy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isError ? (
+                    <RotateCcw className="h-4 w-4" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                  {btnLabel}
+                </button>
+              </div>
+
+              <input
+                ref={(el) => {
+                  inputsRef.current[s.type.id] = el;
+                }}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  onFileChange(s, e.target.files?.[0] ?? null);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
