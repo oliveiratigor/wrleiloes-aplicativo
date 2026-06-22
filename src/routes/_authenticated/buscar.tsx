@@ -73,11 +73,17 @@ function BuscarPage() {
           return;
         }
         const wiz = emptyWizard(id.plate, "new");
-        if (consulta.data) applyConsulta(wiz, consulta.data);
+        if (consulta.data) {
+          applyConsulta(wiz, consulta.data);
+        } else {
+          // FIPE sem dados → modo manual (veículo estrangeiro ou não cadastrado)
+          wiz.isManual = true;
+        }
         saveWizard(wiz);
         pushRecent(id.plate);
         navigate({ to: "/cadastro/$placa", params: { placa: id.plate }, search: { step: 2 } });
         return;
+
       }
 
       const { product, fipe_data } = busca.data;

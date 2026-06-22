@@ -24,9 +24,15 @@ export function StepVeiculo({
 
   return (
     <div className="space-y-5">
-      {preFilled && (
+      {data.isManual && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          ℹ️ Veículo sem dados FIPE. Preencha marca e modelo manualmente.
+        </div>
+      )}
+      {preFilled && !data.isManual && (
         <Badge variant="secondary">Pré-preenchido pela consulta WR</Badge>
       )}
+
 
       <FormField label="Placa">
         <Input

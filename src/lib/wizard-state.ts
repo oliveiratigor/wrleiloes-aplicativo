@@ -34,7 +34,10 @@ export type WizardState = {
   kmFinal: string;
   // passo 4 — características
   attributeIds: string[];
+  // veículo estrangeiro / sem dados FIPE — entrada manual de marca/modelo
+  isManual: boolean;
 };
+
 
 export function emptyWizard(plate: string, mode: WizardMode = "new"): WizardState {
   return {
@@ -62,7 +65,9 @@ export function emptyWizard(plate: string, mode: WizardMode = "new"): WizardStat
     kmInitial: "",
     kmFinal: "",
     attributeIds: [],
+    isManual: false,
   };
+
 }
 
 function key(plate: string) {
