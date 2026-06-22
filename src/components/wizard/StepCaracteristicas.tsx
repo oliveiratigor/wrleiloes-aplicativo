@@ -8,10 +8,12 @@ type Attribute = { id: string; name: string };
 
 export function StepCaracteristicas({
   entryId,
+  productId,
   selectedIds,
   onChange,
 }: {
   entryId?: string;
+  productId?: string;
   selectedIds: string[];
   onChange: (next: string[]) => void;
 }) {
@@ -33,19 +35,34 @@ export function StepCaracteristicas({
 
   // Hidrata atributos já salvos para essa entrada (caso edição)
   useEffect(() => {
-    if (!entryId || hydrated || selectedIds.length > 0) {
-      if (!entryId) setHydrated(true);
-      return;
-    }
+    if (hydrated || selectedIds.length > 0) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
+      let resolvedEntryId: string | null | undefined = entryId;
+      if (!resolvedEntryId && productId) {
+        const { data: openEntry } = await supabase
+          .from("product_entries")
+          .select("id")
+          .eq("product_id", productId)
+          .is("exit_date", null)
+          .is("deleted_at", null)
+          .order("entry_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        resolvedEntryId = openEntry?.id ?? null;
+      }
+      if (cancelled) return;
+      if (!resolvedEntryId) {
+        setHydrated(true);
+        return;
+      }
+      const { data: attrs } = await supabase
         .from("product_attributes")
         .select("attribute_id")
-        .eq("product_entry_id", entryId);
+        .eq("product_entry_id", resolvedEntryId);
       if (cancelled) return;
-      if (data && data.length > 0) {
-        onChange(data.map((d) => d.attribute_id as string));
+      if (attrs && attrs.length > 0) {
+        onChange(attrs.map((a) => a.attribute_id as string));
       }
       setHydrated(true);
     })();
@@ -53,7 +70,8 @@ export function StepCaracteristicas({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entryId]);
+  }, [entryId, productId]);
+
 
   function toggle(id: string) {
     if (selectedIds.includes(id)) {
