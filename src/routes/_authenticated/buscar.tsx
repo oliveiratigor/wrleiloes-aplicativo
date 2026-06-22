@@ -168,7 +168,7 @@ function BuscarPage() {
     navigate({
       to: "/cadastro/$placa",
       params: { placa: found.plate },
-      search: { step: found.mode === "new" ? 2 : 3 },
+      search: { step: 2 },
     });
   }
 
