@@ -37,6 +37,14 @@ export function StepEntrada({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [singleBranch]);
 
+  // Limpa depositId quando a filial muda e o depósito atual não pertence a ela
+  useEffect(() => {
+    if (!data.depositId) return;
+    const valid = depositos.some((d) => d.value === data.depositId);
+    if (!valid) update({ depositId: "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.branchId, depositos]);
+
   const branchForbidden = useMemo(() => {
     if (!data.branchId || isAdmin) return false;
     return !filiais.some((f) => f.value === data.branchId);
