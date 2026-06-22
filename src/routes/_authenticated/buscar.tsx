@@ -216,7 +216,69 @@ function BuscarPage() {
         )}
       </form>
 
-      {recent.length > 0 && (
+      {found && (
+        <div className="mt-6 space-y-4 rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-mono text-lg font-black tracking-widest">
+              {found.plate}
+            </span>
+            <span
+              className={cn(
+                "rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider",
+                found.mode === "edit"
+                  ? "bg-amber-100 text-amber-800"
+                  : found.mode === "reentry"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-green-100 text-green-800",
+              )}
+            >
+              {found.mode === "edit"
+                ? "Entrada em aberto"
+                : found.mode === "reentry"
+                  ? "Nova entrada"
+                  : "Novo veículo"}
+            </span>
+          </div>
+
+          {(found.brand || found.model || found.color) && (
+            <div className="space-y-1">
+              {(found.brand || found.model) && (
+                <p className="text-base font-semibold text-foreground">
+                  {[found.brand, found.model].filter(Boolean).join(" ")}
+                </p>
+              )}
+              {found.color && (
+                <p className="text-sm text-muted-foreground">{found.color}</p>
+              )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={confirmFound}
+            className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground transition active:scale-[0.98]"
+          >
+            {found.mode === "edit"
+              ? "Continuar edição"
+              : found.mode === "reentry"
+                ? "Iniciar nova entrada"
+                : "Cadastrar veículo"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setFound(null);
+              setQuery("");
+            }}
+            className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+          >
+            Buscar outro veículo
+          </button>
+        </div>
+      )}
+
+      {!found && recent.length > 0 && (
         <div className="mt-8 space-y-3">
           <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
