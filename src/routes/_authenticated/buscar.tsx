@@ -260,15 +260,45 @@ function BuscarPage() {
             </span>
           </div>
 
-          {(found.brand || found.model || found.color) && (
-            <div className="space-y-1">
-              {(found.brand || found.model) && (
-                <p className="text-base font-semibold text-foreground">
-                  {[found.brand, found.model].filter(Boolean).join(" ")}
-                </p>
+          {(found.brand || found.model) && (
+            <p className="text-base font-semibold text-foreground">
+              {[found.brand, found.model].filter(Boolean).join(" ")}
+            </p>
+          )}
+
+          {(found.colorName || found.entryTypeName || found.entryDate) && (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              {found.colorName && (
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Cor
+                  </span>
+                  <p className="capitalize text-foreground">
+                    {found.colorName.toLowerCase()}
+                  </p>
+                </div>
               )}
-              {found.color && (
-                <p className="text-sm text-muted-foreground">{found.color}</p>
+              {found.entryTypeName && (
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Motivo
+                  </span>
+                  <p className="text-foreground">{found.entryTypeName}</p>
+                </div>
+              )}
+              {found.entryDate && (
+                <div className="col-span-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Entrada
+                  </span>
+                  <p className="text-foreground">
+                    {new Date(found.entryDate).toLocaleDateString("pt-BR")} às{" "}
+                    {new Date(found.entryDate).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
               )}
             </div>
           )}
@@ -279,7 +309,7 @@ function BuscarPage() {
             className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground transition active:scale-[0.98]"
           >
             {found.mode === "edit"
-              ? "Continuar edição"
+              ? "Editar veículo"
               : found.mode === "reentry"
                 ? "Iniciar nova entrada"
                 : "Cadastrar veículo"}
