@@ -309,9 +309,9 @@ function CadastroPage() {
 
   return (
     <MobileShell topbar={<AppTopbar />} bottom={bottom}>
-      <div className="space-y-5">
-        {/* Header com placa */}
-        <div className="space-y-3">
+      {/* Bloco fixo: voltar + badge + placa + stepper */}
+      <div className="sticky top-0 z-20 -mx-4 bg-background px-4 pb-3 pt-2 shadow-sm">
+        <div className="mb-2 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => navigate({ to: "/buscar" })}
@@ -319,35 +319,28 @@ function CadastroPage() {
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Nova consulta
           </button>
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                Placa
-              </p>
-              <h1 className="font-mono text-3xl font-black tracking-[0.15em] text-foreground">
-                {placa}
-              </h1>
-              <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
-            </div>
-            <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
-          </div>
+          <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
         </div>
-
-        {/* Stepper — sticky no topo, abaixo da topbar */}
-        <div
-          className="sticky z-20 -mx-[var(--page-padding)] border-b border-border bg-background/95 px-[var(--page-padding)] py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80"
-          style={{ top: "var(--header-height)" }}
-        >
-          <Stepper steps={STEPS} current={step} onJump={(id) => go(id)} />
+        <div className="mb-3">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+            Placa
+          </p>
+          <h1 className="font-mono text-3xl font-black tracking-[0.15em] text-foreground">
+            {placa}
+          </h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
         </div>
+        <Stepper steps={STEPS} current={step} onJump={(id) => go(id)} />
+      </div>
 
+      {/* Conteúdo scrollável */}
+      <div className="mt-4 space-y-4">
         {error && (
           <Alert variant="destructive" className="rounded-xl">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        {/* Conteúdo da etapa */}
         <div
           key={step}
           className="animate-in fade-in slide-in-from-bottom-1 duration-200"
@@ -377,7 +370,6 @@ function CadastroPage() {
                 selectedIds={data.attributeIds}
                 onChange={(ids) => update({ attributeIds: ids })}
               />
-
             </Suspense>
           )}
 
