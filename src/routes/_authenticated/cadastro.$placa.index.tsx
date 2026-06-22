@@ -350,7 +350,7 @@ function CadastroPage() {
           className="animate-in fade-in slide-in-from-bottom-1 duration-200"
         >
           {step === 2 && (
-            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+            <Suspense fallback={<WizardLoading />}>
               <StepVeiculo
                 data={data}
                 update={update}
@@ -361,13 +361,13 @@ function CadastroPage() {
           )}
 
           {step === 3 && (
-            <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+            <Suspense fallback={<WizardLoading />}>
               <StepEntrada data={data} update={update} />
             </Suspense>
           )}
 
           {step === 4 && (
-            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+            <Suspense fallback={<WizardLoading />}>
               <StepCaracteristicas
                 entryId={data.entryId}
                 productId={data.productId}
@@ -379,7 +379,7 @@ function CadastroPage() {
           )}
 
           {step === 5 && (
-            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+            <Suspense fallback={<WizardLoading />}>
               {data.productId && data.entryId && account?.id ? (
                 <StepFotos
                   productId={data.productId}
@@ -398,7 +398,7 @@ function CadastroPage() {
           )}
 
           {step === 6 && (
-            <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+            <Suspense fallback={<WizardLoading />}>
               <StepVistoria form={vistoria} setForm={setVistoria} />
             </Suspense>
           )}
