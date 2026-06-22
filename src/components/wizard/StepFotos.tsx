@@ -13,6 +13,7 @@ import {
 import { compressImage } from "@/lib/image/compress";
 import { supabase } from "@/lib/supabase";
 import type { PhotoType } from "@/lib/api/types";
+import { PhotoEditor } from "./PhotoEditor";
 
 type Slot = {
   type: PhotoType;
@@ -41,6 +42,7 @@ export function StepFotos({
     photoTypes.map((t) => ({ type: t, status: "idle" })),
   );
   const inputsRef = useRef<Record<string, HTMLInputElement | null>>({});
+  const [editingFile, setEditingFile] = useState<{ file: File; slot: Slot } | null>(null);
 
   // Hidrata fotos já existentes na entrada (caso esteja editando entrada aberta)
   useEffect(() => {
@@ -235,7 +237,7 @@ export function StepFotos({
 
   function onFileChange(slot: Slot, file: File | null) {
     if (!file) return;
-    void uploadSingle(slot, file);
+    setEditingFile({ file, slot });
   }
 
   function retrySlot(slot: Slot) {
@@ -395,6 +397,23 @@ export function StepFotos({
           );
         })}
       </div>
+
+      {editingFile && (
+        <PhotoEditor
+          file={editingFile.file}
+          onConfirm={(blob) => {
+            const processedFile = new File(
+              [blob],
+              editingFile.file.name.replace(/\.[^.]+$/, "") + ".jpg",
+              { type: "image/jpeg" },
+            );
+            const slot = editingFile.slot;
+            setEditingFile(null);
+            void uploadSingle(slot, processedFile);
+          }}
+          onCancel={() => setEditingFile(null)}
+        />
+      )}
     </div>
   );
 }

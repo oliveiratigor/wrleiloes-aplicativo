@@ -65,7 +65,11 @@ function CadastroPage() {
   const [vistoria, setVistoria] = useState<VistoriaForm>(() => {
     const saved = loadWizard(placa);
     if (saved?.vistoria) return saved.vistoria;
-    return emptyVistoria();
+    const empty = emptyVistoria();
+    const wizData = saved ?? emptyWizard(placa);
+    empty.engineNumberBase = wizData.engine || "";
+    empty.chassisNumberBase = wizData.chassis || "";
+    return empty;
   });
 
   useEffect(() => {
@@ -86,9 +90,9 @@ function CadastroPage() {
       const p = res.data.product;
       setVistoria({
         engineNumberVehicle: p.engine_number_vehicle ?? "",
-        engineNumberBase: p.engine_number_base ?? "",
+        engineNumberBase: p.engine_number_base ?? data.engine ?? "",
         chassisNumberVehicle: p.chassis_number_vehicle ?? "",
-        chassisNumberBase: p.chassis_number_base ?? "",
+        chassisNumberBase: p.chassis_number_base ?? data.chassis ?? "",
         engineDivs: new Set(p.engine_discrepancies_uuid),
         chassisDivs: new Set(p.chassis_discrepancies_uuid),
         rejectionReasons: new Set(p.rejection_reasons_uuid),
