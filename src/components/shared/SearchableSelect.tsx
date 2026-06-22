@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Check, ChevronsUpDown, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   Drawer,
   DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
 
@@ -42,8 +40,18 @@ export function SearchableSelect({
   title,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
   const selected = options.find((o) => o.value === value);
+
+  const filtered = useMemo(
+    () =>
+      options.filter((o) =>
+        o.label.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [options, search],
+  );
 
   const trigger = (
     <Button
@@ -64,46 +72,76 @@ export function SearchableSelect({
     </Button>
   );
 
-  const list = (
-    <Command className="h-full">
-      <CommandInput placeholder="Buscar…" />
-      <CommandList className={isMobile ? "max-h-none flex-1" : undefined}>
-        <CommandEmpty>{emptyText}</CommandEmpty>
-        <CommandGroup>
-          {options.map((o) => (
-            <CommandItem
-              key={o.value}
-              value={o.label}
-              className="uppercase"
-              onSelect={() => {
-                onChange(o.value);
-                setOpen(false);
-              }}
-            >
-              <Check
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  o.value === value ? "opacity-100" : "opacity-0",
-                )}
-              />
-              {o.label}
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      </CommandList>
-    </Command>
-  );
-
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) setSearch("");
+          setOpen(v);
+        }}
+      >
         <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-        <DrawerContent className="h-[50vh] bg-white">
-          <DrawerHeader className="pb-2">
-            <DrawerTitle className="text-base">{title ?? placeholder}</DrawerTitle>
-          </DrawerHeader>
-          <div className="flex-1 min-h-0 px-2 pb-[env(safe-area-inset-bottom)]">
-            {list}
+        <DrawerContent
+          className="bg-background"
+          style={{ height: "50vh", maxHeight: "50vh" }}
+        >
+          <div className="mx-auto mt-3 mb-1 h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+
+          <div className="px-4 pb-2 pt-1">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+              {title ?? placeholder}
+            </p>
+          </div>
+
+          <div className="px-4 pb-3">
+            <div className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2.5">
+              <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <input
+                ref={searchRef}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar..."
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+                autoFocus
+              />
+              {search && (
+                <button type="button" onClick={() => setSearch("")}>
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+            {filtered.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {emptyText}
+              </p>
+            ) : (
+              filtered.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(o.value);
+                    setSearch("");
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-medium transition-colors active:bg-muted",
+                    o.value === value ? "text-primary" : "text-foreground",
+                  )}
+                >
+                  {o.value === value ? (
+                    <Check className="h-4 w-4 shrink-0 text-primary" />
+                  ) : (
+                    <div className="w-4 shrink-0" />
+                  )}
+                  <span className="uppercase">{o.label}</span>
+                </button>
+              ))
+            )}
           </div>
         </DrawerContent>
       </Drawer>
@@ -114,7 +152,33 @@ export function SearchableSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        {list}
+        <Command className="h-full">
+          <CommandInput placeholder="Buscar…" />
+          <CommandList>
+            <CommandEmpty>{emptyText}</CommandEmpty>
+            <CommandGroup>
+              {options.map((o) => (
+                <CommandItem
+                  key={o.value}
+                  value={o.label}
+                  className="uppercase"
+                  onSelect={() => {
+                    onChange(o.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      o.value === value ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {o.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
       </PopoverContent>
     </Popover>
   );
