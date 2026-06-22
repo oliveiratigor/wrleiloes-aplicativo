@@ -407,3 +407,11 @@ function CadastroPage() {
     </MobileShell>
   );
 }
+
+function WizardLoading() {
+  return (
+    <div className="flex flex-1 items-center justify-center py-20">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
