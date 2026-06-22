@@ -14,10 +14,22 @@ export type CadastroResult =
 export async function cadastrarProduto(
   payload: CadastrarProdutoPayload,
 ): Promise<CadastroResult> {
+  // Veículos estrangeiros / sem dados FIPE: remover chaves nulas de fipe_data,
+  // enviando `{}` em vez de objeto com campos null.
+  const fipe = payload.fipe_data ?? {};
+  const cleanedFipe = Object.fromEntries(
+    Object.entries(fipe).filter(([, v]) => v !== null && v !== undefined && v !== ""),
+  );
+  const finalPayload: CadastrarProdutoPayload = {
+    ...payload,
+    fipe_data: cleanedFipe as CadastrarProdutoPayload["fipe_data"],
+  };
+
   const { data, error } = await apiCall<
     CadastrarProdutoPayload,
     CadastrarProdutoResponse
-  >("cadastrar-produto", payload);
+  >("cadastrar-produto", finalPayload);
+
 
   if (error || !data) {
     return { ok: false, code: "NETWORK", message: error ?? "Erro de rede." };
