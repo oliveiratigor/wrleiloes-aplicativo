@@ -333,8 +333,11 @@ function CadastroPage() {
           </div>
         </div>
 
-        {/* Stepper */}
-        <div className="py-2">
+        {/* Stepper — sticky no topo, abaixo da topbar */}
+        <div
+          className="sticky z-20 -mx-[var(--page-padding)] border-b border-border bg-background/95 px-[var(--page-padding)] py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+          style={{ top: "var(--header-height)" }}
+        >
           <Stepper steps={STEPS} current={step} onJump={(id) => go(id)} />
         </div>
 
