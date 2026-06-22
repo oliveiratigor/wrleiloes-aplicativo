@@ -63,7 +63,7 @@ export function StepVeiculo({
         <Input
           className={formFieldClass}
           value={data.engine}
-          onChange={(e) => update({ engine: e.target.value })}
+          onChange={(e) => update({ engine: e.target.value.toUpperCase() })}
         />
       </FormField>
       <FormField label="Marca">
