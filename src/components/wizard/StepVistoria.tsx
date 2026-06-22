@@ -217,9 +217,18 @@ function groupBy(list: VerificationStatus[]) {
     final_classification: [],
   };
   for (const s of list) {
-    if (s.applies_to in out) {
-      (out as Record<string, VerificationStatus[]>)[s.applies_to].push(s);
+    if (s.applies_to === "engine") {
+      out.engine.push(s);
+      continue;
     }
+    if (s.applies_to === "chassis") {
+      out.chassis.push(s);
+      continue;
+    }
+    const ctx = (s.usage_context ?? null) as string | null;
+    if (ctx === "rejection") out.rejection.push(s);
+    else if (ctx === "initial_condition") out.initial_condition.push(s);
+    else if (ctx === "final_classification") out.final_classification.push(s);
   }
   return out;
 }
