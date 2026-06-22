@@ -309,8 +309,19 @@ function CadastroPage() {
 
   return (
     <MobileShell topbar={<AppTopbar />} bottom={bottom}>
-      {/* Bloco fixo: voltar + badge + placa + stepper */}
-      <div className="sticky top-0 z-20 -mx-4 bg-background px-4 pb-3 pt-2 shadow-sm">
+      {/* Sticky header: cancela o padding do wrapper interno e gruda nas bordas */}
+      <div
+        className="sticky top-0 z-20 bg-background shadow-sm"
+        style={{
+          marginLeft: "calc(-1 * var(--page-padding))",
+          marginRight: "calc(-1 * var(--page-padding))",
+          marginTop: "calc(-1 * var(--space-5))",
+          paddingLeft: "var(--page-padding)",
+          paddingRight: "var(--page-padding)",
+          paddingTop: "var(--space-5)",
+          paddingBottom: "12px",
+        }}
+      >
         <div className="mb-2 flex items-center justify-between gap-3">
           <button
             type="button"
