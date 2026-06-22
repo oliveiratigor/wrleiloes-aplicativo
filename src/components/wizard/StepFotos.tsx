@@ -397,6 +397,23 @@ export function StepFotos({
           );
         })}
       </div>
+
+      {editingFile && (
+        <PhotoEditor
+          file={editingFile.file}
+          onConfirm={(blob) => {
+            const processedFile = new File(
+              [blob],
+              editingFile.file.name.replace(/\.[^.]+$/, "") + ".jpg",
+              { type: "image/jpeg" },
+            );
+            const slot = editingFile.slot;
+            setEditingFile(null);
+            void uploadSingle(slot, processedFile);
+          }}
+          onCancel={() => setEditingFile(null)}
+        />
+      )}
     </div>
   );
 }
