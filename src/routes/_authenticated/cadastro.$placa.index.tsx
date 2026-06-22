@@ -238,7 +238,7 @@ function CadastroPage() {
             data.attributeIds.map((id) => ({
               product_entry_id: data.entryId,
               attribute_id: id,
-              value: "true",
+              value: "",
             })),
           );
         }
