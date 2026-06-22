@@ -118,7 +118,8 @@ function BuscarPage() {
       wiz.chassis = product.chassis ?? "";
       wiz.renavam = product.renavam ?? "";
       wiz.engine = product.engine ?? "";
-      wiz.color = product.color ?? "";
+      wiz.colorId = product.color ?? "";
+      wiz.color = "";
       wiz.mileage = product.mileage != null ? String(product.mileage) : "";
       wiz.hasKey = !!product.has_key;
       wiz.typeId = product.type_uuid ?? "";
