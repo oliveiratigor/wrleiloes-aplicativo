@@ -249,15 +249,8 @@ export function StepFotos({
   // Mantido para compatibilidade com retryQueued (não exposto na UI).
   void runWithConcurrency;
 
-  function clearSlot(typeId: string) {
-    setSlots((prev) =>
-      prev.map((s) =>
-        s.type.id === typeId
-          ? { ...s, file: undefined, status: s.uploadedUrl ? "done" : "idle", error: undefined }
-          : s,
-      ),
-    );
-  }
+
+
 
   const totalDone = slots.filter((s) => s.status === "done").length;
 
