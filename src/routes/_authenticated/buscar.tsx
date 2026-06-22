@@ -48,7 +48,7 @@ function BuscarPage() {
     }
     setLoading(true);
     try {
-      const buscarPayload = id.kind === "plate" ? { plate: id.plate } : { renavam: id.renavam };
+      const buscarPayload = id.kind === "plate" ? { plate: id.plate } : { chassis: id.chassis };
       const [busca, consulta] = await Promise.all([
         buscarProduto(buscarPayload),
         id.kind === "plate"
@@ -69,7 +69,7 @@ function BuscarPage() {
 
       if (!busca.found || !busca.data) {
         if (id.kind !== "plate") {
-          setError("Renavam não encontrado. Para novo cadastro, busque pela placa.");
+          setError("Chassi não encontrado. Para novo cadastro, busque pela placa.");
           return;
         }
         const wiz = emptyWizard(id.plate, "new");
@@ -158,7 +158,7 @@ function BuscarPage() {
             Pesquisar veículo
           </h1>
           <p className="text-sm text-muted-foreground">
-            Digite a placa para localizar ou iniciar um novo cadastro.
+            Digite a placa ou chassi para localizar ou iniciar um novo cadastro.
           </p>
         </div>
 
@@ -167,7 +167,7 @@ function BuscarPage() {
             htmlFor="plate"
             className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground"
           >
-            Placa ou renavam
+            Placa ou chassi
           </label>
           <PlateInput
             id="plate"

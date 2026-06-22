@@ -16,22 +16,24 @@ export type BuscarInput = {
  */
 export function detectIdentifier(raw: string):
   | { kind: "plate"; plate: string }
-  | { kind: "renavam"; renavam: string }
+  | { kind: "chassis"; chassis: string }
   | { kind: "invalid"; reason: string } {
   const value = raw.trim().toUpperCase().replace(/[\s-]/g, "");
-  if (!value) return { kind: "invalid", reason: "Informe uma placa ou renavam." };
+  if (!value) return { kind: "invalid", reason: "Informe uma placa ou chassi." };
   // só pode conter alfanumérico
   if (!/^[A-Z0-9]+$/.test(value)) {
-    return { kind: "invalid", reason: "Placa ou renavam inválido." };
+    return { kind: "invalid", reason: "Digite uma placa válida ou chassi (17 caracteres)." };
   }
-  // renavam: só dígitos, 9 a 11 caracteres
-  if (/^\d{9,11}$/.test(value)) return { kind: "renavam", renavam: value };
+  // chassi (VIN): 17 caracteres alfanuméricos, sem I, O, Q
+  if (value.length === 17 && /^[A-HJ-NPR-Z0-9]{17}$/.test(value)) {
+    return { kind: "chassis", chassis: value };
+  }
   // placa: 6 a 8 caracteres, ao menos 1 letra e 1 dígito.
   // Permissivo para cobrir Mercosul, antiga e variantes legadas do backoffice.
   if (value.length >= 6 && value.length <= 8 && /[A-Z]/.test(value) && /\d/.test(value)) {
     return { kind: "plate", plate: value };
   }
-  return { kind: "invalid", reason: "Placa ou renavam inválido." };
+  return { kind: "invalid", reason: "Digite uma placa válida ou chassi (17 caracteres)." };
 }
 
 export async function buscarProduto(input: BuscarInput): Promise<{
