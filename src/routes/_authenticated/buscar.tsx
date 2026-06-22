@@ -99,7 +99,10 @@ function BuscarPage() {
           plate: id.plate,
           brand: wiz.brand,
           model: wiz.model,
-          color: wiz.color,
+          colorId: "",
+          colorName: wiz.color,
+          entryDate: null,
+          entryTypeName: null,
           mode: "new",
           wiz,
         });
