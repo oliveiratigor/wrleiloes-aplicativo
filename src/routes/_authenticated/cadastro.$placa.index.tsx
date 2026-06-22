@@ -3,8 +3,6 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
-void Skeleton;
 import { MobileShell } from "@/components/mobile/MobileShell";
 import { AppTopbar } from "@/components/mobile/AppTopbar";
 import { BottomActionBar, BottomBarButton } from "@/components/mobile/BottomActionBar";
