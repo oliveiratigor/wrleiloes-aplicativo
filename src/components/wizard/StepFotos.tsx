@@ -6,7 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { tiposFotosQuery } from "@/lib/api/lookups";
-import { uploadFotoDirect, runWithConcurrency } from "@/lib/api/upload";
+import { uploadFotoWithFallback, runWithConcurrency } from "@/lib/api/upload";
+import {
+  enqueue as enqueueUpload,
+  getByEntry as getQueuedByEntry,
+  incrementAttempts as incrementQueueAttempts,
+} from "@/lib/upload-queue";
+import { compressImage } from "@/lib/image/compress";
 import { supabase } from "@/lib/supabase";
 import type { PhotoType } from "@/lib/api/types";
 
