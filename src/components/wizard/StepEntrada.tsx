@@ -6,7 +6,7 @@ import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { FormField } from "@/components/shared/FormField";
 import {
   filiaisQueryFor,
-  depositosQuery,
+  depositosQueryFor,
   comitentesQueryFor,
   tiposEntradaQuery,
 } from "@/lib/api/lookups";
