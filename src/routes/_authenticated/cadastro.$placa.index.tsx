@@ -148,22 +148,7 @@ function CadastroPage() {
     }
     setSaving(true);
     setError(null);
-    // Log de diagnóstico — visibilidade do payload enviado ao cadastrar-produto
-    void supabase.from("system_logs").insert({
-      type: "info",
-      source: "app-mobile-v2-saveStep3",
-      payload: {
-        plate: data.plate,
-        productId: data.productId,
-        entryId: data.entryId,
-        branchId: data.branchId,
-        depositId: data.depositId,
-        principalId: data.principalId,
-        entryTypeId: data.entryTypeId,
-        userUuid: user?.uuid,
-        accountUuid: user?.account_uuid,
-      },
-    });
+
     const res = await cadastrarProduto({
       user_data: { uuid: user.uuid, account_uuid: user.account_uuid ?? undefined },
       product: {
@@ -386,9 +371,11 @@ function CadastroPage() {
             <Suspense fallback={<Skeleton className="h-64 w-full" />}>
               <StepCaracteristicas
                 entryId={data.entryId}
+                productId={data.productId}
                 selectedIds={data.attributeIds}
                 onChange={(ids) => update({ attributeIds: ids })}
               />
+
             </Suspense>
           )}
 
