@@ -10,12 +10,16 @@ import { buscarProduto, detectIdentifier, hasOpenEntry } from "@/lib/api/buscar"
 import { consultaVeiculo } from "@/lib/api/consulta";
 import { saveWizard, emptyWizard, type WizardState, type WizardMode } from "@/lib/wizard-state";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 type FoundResult = {
   plate: string;
   brand: string;
   model: string;
-  color: string;
+  colorId: string;
+  colorName: string;
+  entryDate: string | null;
+  entryTypeName: string | null;
   mode: WizardMode;
   wiz: WizardState;
 };
