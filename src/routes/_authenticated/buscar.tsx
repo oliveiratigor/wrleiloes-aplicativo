@@ -52,6 +52,7 @@ function BuscarPage() {
 
   async function runSearch(value: string) {
     setError(null);
+    setFound(null);
     const id = detectIdentifier(value);
     if (id.kind === "invalid") {
       setError(id.reason);
@@ -87,14 +88,18 @@ function BuscarPage() {
         if (consulta.data) {
           applyConsulta(wiz, consulta.data);
         } else {
-          // FIPE sem dados → modo manual (veículo estrangeiro ou não cadastrado)
           wiz.isManual = true;
         }
-        saveWizard(wiz);
         pushRecent(id.plate);
-        navigate({ to: "/cadastro/$placa", params: { placa: id.plate }, search: { step: 2 } });
+        setFound({
+          plate: id.plate,
+          brand: wiz.brand,
+          model: wiz.model,
+          color: wiz.color,
+          mode: "new",
+          wiz,
+        });
         return;
-
       }
 
       const { product, fipe_data } = busca.data;
@@ -120,19 +125,31 @@ function BuscarPage() {
       wiz.depositId = product.deposit_uuid ?? "";
       wiz.principalId = product.consignor_uuid ?? "";
       wiz.entryTypeId = product.entry_type_uuid ?? "";
-      saveWizard(wiz);
 
       pushRecent(navPlate || product.plate);
-      navigate({
-        to: "/cadastro/$placa",
-        params: { placa: navPlate || product.plate },
-        search: { step: 3 },
+      setFound({
+        plate: navPlate || product.plate,
+        brand: wiz.brand,
+        model: wiz.model,
+        color: wiz.color,
+        mode,
+        wiz,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro inesperado.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function confirmFound() {
+    if (!found) return;
+    saveWizard(found.wiz);
+    navigate({
+      to: "/cadastro/$placa",
+      params: { placa: found.plate },
+      search: { step: found.mode === "new" ? 2 : 3 },
+    });
   }
 
   function onSubmit(e: React.FormEvent) {
