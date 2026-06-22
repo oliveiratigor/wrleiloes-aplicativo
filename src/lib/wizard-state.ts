@@ -1,4 +1,4 @@
-// Estado do wizard, persistido em sessionStorage por placa.
+// Estado do wizard, persistido em localStorage por placa.
 // Sobrevive a refresh durante upload demorado.
 
 import type { VistoriaForm } from "@/components/wizard/StepVistoria";
@@ -102,7 +102,7 @@ export function deserializeVistoria(raw: unknown): VistoriaForm {
 
 export function loadWizard(plate: string): WizardState | null {
   try {
-    const raw = sessionStorage.getItem(key(plate));
+    const raw = localStorage.getItem(key(plate));
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     return {
@@ -120,7 +120,7 @@ export function saveWizard(state: WizardState) {
       ...state,
       vistoria: state.vistoria ? serializeVistoria(state.vistoria) : null,
     };
-    sessionStorage.setItem(key(state.plate), JSON.stringify(toSave));
+    localStorage.setItem(key(state.plate), JSON.stringify(toSave));
   } catch {
     // ignore
   }
@@ -128,7 +128,7 @@ export function saveWizard(state: WizardState) {
 
 export function clearWizard(plate: string) {
   try {
-    sessionStorage.removeItem(key(plate));
+    localStorage.removeItem(key(plate));
   } catch {
     // ignore
   }
