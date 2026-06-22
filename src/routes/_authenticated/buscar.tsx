@@ -202,7 +202,10 @@ function BuscarPage() {
             autoFocus
             placeholder="ABC1D23"
             value={query}
-            onValueChange={setQuery}
+            onValueChange={(v) => {
+              setQuery(v);
+              if (found) setFound(null);
+            }}
           />
         </div>
 
