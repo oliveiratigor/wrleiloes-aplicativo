@@ -56,6 +56,7 @@ export type BuscarProdutoResponse =
         charge_towing: boolean | null;
         towing_km_initial: number | null;
         towing_km_final: number | null;
+        entry_date?: string | null;
       };
       fipe_data: {
         fipe_codigo: string | null;
