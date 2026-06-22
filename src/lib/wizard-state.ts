@@ -18,6 +18,7 @@ export type WizardState = {
   brand: string;
   model: string;
   color: string;
+  colorId: string;
   fuel: string;
   yearManufacture: string;
   yearModel: string;
@@ -53,6 +54,7 @@ export function emptyWizard(plate: string, mode: WizardMode = "new"): WizardStat
     brand: "",
     model: "",
     color: "",
+    colorId: "",
     fuel: "",
     yearManufacture: "",
     yearModel: "",

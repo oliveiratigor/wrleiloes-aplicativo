@@ -88,8 +88,11 @@ export function StepVeiculo({
       <FormField label="Cor">
         <SearchableSelect
           options={cores}
-          value={data.color}
-          onChange={(v) => update({ color: v })}
+          value={data.colorId}
+          onChange={(v) => {
+            const selected = cores.find((c) => c.value === v);
+            update({ colorId: v, color: selected?.label ?? "" });
+          }}
         />
       </FormField>
       <FormField label="Combustível">
