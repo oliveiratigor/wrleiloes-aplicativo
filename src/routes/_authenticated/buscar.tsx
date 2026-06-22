@@ -134,11 +134,24 @@ function BuscarPage() {
       wiz.entryTypeId = product.entry_type_uuid ?? "";
 
       pushRecent(navPlate || product.plate);
+
+      const [colorResult, entryTypeResult] = await Promise.all([
+        product.color
+          ? supabase.from("colors").select("name").eq("id", product.color).maybeSingle()
+          : Promise.resolve({ data: null as { name: string } | null }),
+        product.entry_type_uuid
+          ? supabase.from("entry_types").select("name").eq("id", product.entry_type_uuid).maybeSingle()
+          : Promise.resolve({ data: null as { name: string } | null }),
+      ]);
+
       setFound({
         plate: navPlate || product.plate,
         brand: wiz.brand,
         model: wiz.model,
-        color: wiz.color,
+        colorId: product.color ?? "",
+        colorName: colorResult.data?.name ?? "",
+        entryDate: open ? (product.entry_date ?? null) : null,
+        entryTypeName: entryTypeResult.data?.name ?? null,
         mode,
         wiz,
       });
