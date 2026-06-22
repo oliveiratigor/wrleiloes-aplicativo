@@ -12,6 +12,7 @@ import { Stepper } from "@/components/wizard/Stepper";
 import { StepVeiculo } from "@/components/wizard/StepVeiculo";
 import { StepEntrada } from "@/components/wizard/StepEntrada";
 import { StepFotos } from "@/components/wizard/StepFotos";
+import { StepCaracteristicas } from "@/components/wizard/StepCaracteristicas";
 import {
   StepVistoria,
   emptyVistoria,
@@ -35,12 +36,13 @@ import { supabase } from "@/lib/supabase";
 const STEPS = [
   { id: 2, label: "Veículo" },
   { id: 3, label: "Entrada" },
-  { id: 4, label: "Fotos" },
-  { id: 5, label: "Vistoria" },
+  { id: 4, label: "Caract." },
+  { id: 5, label: "Fotos" },
+  { id: 6, label: "Vistoria" },
 ];
 
 const searchSchema = z.object({
-  step: z.coerce.number().min(2).max(5).catch(2),
+  step: z.coerce.number().min(2).max(6).catch(2),
 });
 
 export const Route = createFileRoute("/_authenticated/cadastro/$placa/")({
