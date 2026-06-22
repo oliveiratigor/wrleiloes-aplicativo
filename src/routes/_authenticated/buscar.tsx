@@ -167,7 +167,7 @@ function BuscarPage() {
             htmlFor="plate"
             className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground"
           >
-            Placa ou renavam
+            Placa ou chassi
           </label>
           <PlateInput
             id="plate"
