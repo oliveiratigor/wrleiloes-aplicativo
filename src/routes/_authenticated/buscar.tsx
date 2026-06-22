@@ -145,6 +145,9 @@ function BuscarPage() {
           : Promise.resolve({ data: null as { name: string } | null }),
       ]);
 
+      wiz.color = colorResult.data?.name ?? "";
+
+
       setFound({
         plate: navPlate || product.plate,
         brand: wiz.brand,
