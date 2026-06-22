@@ -173,7 +173,6 @@ function CadastroPage() {
         deposit_uuid: data.depositId || null,
         consignor_uuid: data.principalId || null,
         entry_type_uuid: data.entryTypeId || null,
-        charge_towing: false,
         km_initial: null,
         km_final: null,
       },
