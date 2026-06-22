@@ -81,6 +81,28 @@ export const depositosQuery = queryOptions({
   queryFn: () => selectLookup("deposits", true),
   staleTime: 5 * 60_000,
 });
+
+/** Depósitos filtrados pela filial selecionada. */
+export function depositosQueryFor(branchId: string | null | undefined) {
+  return queryOptions({
+    queryKey: ["lookup", "depositos", branchId ?? "all"],
+    queryFn: async (): Promise<LookupItem[]> => {
+      let q = supabase
+        .from("deposits")
+        .select("id, name, branch_id")
+        .is("deleted_at", null)
+        .order("name");
+      if (branchId) q = q.eq("branch_id", branchId);
+      const { data, error } = await q;
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((r: { id: string; name: string }) => ({
+        value: r.id,
+        label: capitalize(r.name),
+      }));
+    },
+    staleTime: 5 * 60_000,
+  });
+}
 export const comitentesQuery = queryOptions({
   queryKey: ["lookup", "comitentes"],
   queryFn: () => selectLookup("principals", true),
