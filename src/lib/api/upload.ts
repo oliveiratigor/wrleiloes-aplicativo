@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { apiCall } from "@/lib/api";
 import { compressImage } from "@/lib/image/compress";
+import { dequeue } from "@/lib/upload-queue";
 import type { PresignResponse } from "./types";
 
 export type UploadParams = {
@@ -133,4 +134,65 @@ export async function runWithConcurrency<T>(
     }
   });
   await Promise.all(workers);
+}
+
+/**
+ * Wrapper resiliente: tenta PUT direto S3, e em caso de falha de rede/CORS,
+ * faz fallback para a edge function `app-s3-upload` (action=upload, base64).
+ * Erros de RLS/dados inválidos NÃO acionam fallback.
+ */
+export async function uploadFotoWithFallback(
+  p: UploadParams & { queueId?: string },
+): Promise<UploadResult> {
+  try {
+    const result = await uploadFotoDirect(p);
+    if (p.queueId) await dequeue(p.queueId);
+    return result;
+  } catch (s3Err) {
+    const errMsg = s3Err instanceof Error ? s3Err.message : String(s3Err);
+    const isNetworkError =
+      errMsg.includes("fetch") ||
+      errMsg.includes("S3 falhou") ||
+      errMsg.includes("Failed") ||
+      errMsg.includes("URL") ||
+      errMsg.includes("network") ||
+      errMsg.includes("NetworkError");
+
+    if (!isNetworkError) throw s3Err;
+
+    const compressed = await compressImage(p.file, { maxDim: 1600, quality: 0.85 });
+    const base64 = await blobToBase64(compressed.blob);
+
+    const { data: fallbackResult, error: fallbackErr } = await apiCall<
+      Record<string, unknown>,
+      { id: string; url: string }
+    >("app-s3-upload", {
+      action: "upload",
+      photo_type_id: p.photoTypeId,
+      product_id: p.productId,
+      product_entry_id: p.entryId,
+      account_id: p.accountId,
+      file_data: base64,
+      content_type: compressed.mimeType,
+    });
+
+    if (fallbackErr || !fallbackResult) {
+      throw new Error(fallbackErr ?? "Fallback upload falhou");
+    }
+    if (p.queueId) await dequeue(p.queueId);
+    return {
+      mediaId: fallbackResult.id,
+      url: fallbackResult.url,
+      size: compressed.blob.size,
+    };
+  }
+}
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
 }

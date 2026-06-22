@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Camera, Check, ImagePlus, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { tiposFotosQuery } from "@/lib/api/lookups";
-import { uploadFotoDirect, runWithConcurrency } from "@/lib/api/upload";
+import { uploadFotoWithFallback, runWithConcurrency } from "@/lib/api/upload";
+import {
+  enqueue as enqueueUpload,
+  getByEntry as getQueuedByEntry,
+  incrementAttempts as incrementQueueAttempts,
+} from "@/lib/upload-queue";
+import { compressImage } from "@/lib/image/compress";
 import { supabase } from "@/lib/supabase";
 import type { PhotoType } from "@/lib/api/types";
 
@@ -15,8 +21,10 @@ type Slot = {
   file?: File;
   uploadedUrl?: string;
   mediaId?: string;
-  status: "idle" | "queued" | "uploading" | "done" | "error";
+  status: "idle" | "queued" | "uploading" | "done" | "error" | "retrying";
   error?: string;
+  queuedId?: string;
+  queuedAttempts?: number;
 };
 
 export function StepFotos({
@@ -59,6 +67,82 @@ export function StepFotos({
     };
   }, [productId, entryId]);
 
+  // Retry de itens da fila local: roda no mount e quando rede volta.
+  const retryQueued = useCallback(async () => {
+    if (!entryId || !accountId) return;
+    const queued = await getQueuedByEntry(entryId);
+    if (queued.length === 0) return;
+    // Marca slots correspondentes como retrying.
+    setSlots((prev) =>
+      prev.map((s) => {
+        const q = queued.find((i) => i.photoTypeId === Number(s.type.id));
+        return q && s.status !== "done"
+          ? { ...s, queuedId: q.id, queuedAttempts: q.attempts, status: "retrying" }
+          : s;
+      }),
+    );
+    for (const item of queued) {
+      if (item.attempts >= 3) continue;
+      try {
+        await incrementQueueAttempts(item.id);
+        const file = new File(
+          [item.blob],
+          `photo_${item.photoTypeId}.jpg`,
+          { type: item.mimeType },
+        );
+        const res = await uploadFotoWithFallback({
+          file,
+          productId: item.productId,
+          entryId: item.entryId,
+          accountId: item.accountId,
+          photoTypeId: item.photoTypeId,
+          queueId: item.id,
+        });
+        setSlots((prev) =>
+          prev.map((s) =>
+            Number(s.type.id) === item.photoTypeId
+              ? {
+                  ...s,
+                  status: "done",
+                  uploadedUrl: res.url,
+                  mediaId: res.mediaId,
+                  file: undefined,
+                  queuedId: undefined,
+                  queuedAttempts: undefined,
+                  error: undefined,
+                }
+              : s,
+          ),
+        );
+      } catch {
+        setSlots((prev) =>
+          prev.map((s) =>
+            Number(s.type.id) === item.photoTypeId
+              ? {
+                  ...s,
+                  status: "error",
+                  error: "Salvando para reenvio…",
+                  queuedAttempts: (s.queuedAttempts ?? 0) + 1,
+                }
+              : s,
+          ),
+        );
+      }
+    }
+  }, [entryId, accountId, productId]);
+
+  useEffect(() => {
+    retryQueued();
+  }, [retryQueued]);
+
+  useEffect(() => {
+    const handler = () => {
+      retryQueued();
+    };
+    window.addEventListener("online", handler);
+    return () => window.removeEventListener("online", handler);
+  }, [retryQueued]);
+
   const bypassFotos = import.meta.env.VITE_BYPASS_FOTOS_REQUIRED === "true";
 
   useEffect(() => {
@@ -67,7 +151,13 @@ export function StepFotos({
       return;
     }
     const required = slots.filter((s) => s.type.is_required);
-    const allDone = required.every((s) => s.status === "done");
+    // Consideramos "completa" uma foto enviada OU em fila de retry (<3 tentativas) —
+    // não bloqueia o inspector por falhas transitórias de rede.
+    const allDone = required.every(
+      (s) =>
+        s.status === "done" ||
+        (s.queuedId !== undefined && (s.queuedAttempts ?? 0) < 3),
+    );
     onAllRequiredDone?.(allDone);
   }, [slots, onAllRequiredDone, bypassFotos]);
 
@@ -92,7 +182,7 @@ export function StepFotos({
     );
     await runWithConcurrency(pending, async (slot) => {
       try {
-        const res = await uploadFotoDirect({
+        const res = await uploadFotoWithFallback({
           file: slot.file!,
           productId,
           entryId,
@@ -108,18 +198,54 @@ export function StepFotos({
                   uploadedUrl: res.url,
                   mediaId: res.mediaId,
                   file: undefined,
+                  queuedId: undefined,
+                  queuedAttempts: undefined,
+                  error: undefined,
                 }
               : s,
           ),
         );
       } catch (err) {
-        setSlots((prev) =>
-          prev.map((s) =>
-            s.type.id === slot.type.id
-              ? { ...s, status: "error", error: err instanceof Error ? err.message : String(err) }
-              : s,
-          ),
-        );
+        // Falhou direto e fallback — enfileira pra retry em background.
+        try {
+          const compressed = await compressImage(slot.file!, {
+            maxDim: 1600,
+            quality: 0.85,
+          });
+          const queuedId = await enqueueUpload({
+            blob: compressed.blob,
+            mimeType: compressed.mimeType,
+            photoTypeId: Number(slot.type.id),
+            productId,
+            entryId,
+            accountId,
+          });
+          setSlots((prev) =>
+            prev.map((s) =>
+              s.type.id === slot.type.id
+                ? {
+                    ...s,
+                    status: "error",
+                    error: "Salvando para reenvio…",
+                    queuedId,
+                    queuedAttempts: 0,
+                  }
+                : s,
+            ),
+          );
+        } catch {
+          setSlots((prev) =>
+            prev.map((s) =>
+              s.type.id === slot.type.id
+                ? {
+                    ...s,
+                    status: "error",
+                    error: err instanceof Error ? err.message : String(err),
+                  }
+                : s,
+            ),
+          );
+        }
       }
     });
   }
