@@ -30,6 +30,7 @@ import { cadastrarProduto } from "@/lib/api/cadastro";
 import { salvarVistoria } from "@/lib/api/vistoria";
 import { buscarProduto } from "@/lib/api/buscar";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 const STEPS = [
   { id: 2, label: "Veículo" },
