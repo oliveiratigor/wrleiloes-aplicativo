@@ -14,14 +14,13 @@ export type VistoriaInput = {
   finalApproval: "approved" | "rejected" | null;
   rejectionNotes?: string | null;
   notes?: string | null;
-  chargeTow?: boolean | null;
-  kmInitial?: number | null;
-  kmFinal?: number | null;
 };
 
 /**
  * Estratégia: limpamos linhas anteriores da entrada (por type) e reinserimos.
- * Em paralelo, atualizamos `product_entries` com status final e dados de guincho.
+ * Em paralelo, atualizamos `product_entries` APENAS com status final da vistoria.
+ * Cobrança (charge_tow) e KM de guincho são responsabilidade do backoffice — a
+ * vistoria nunca escreve esses campos.
  *
  * IMPORTANTE: writes em tabelas com RLS retornam 0 rows sem erro quando a policy
  * bloqueia. Usamos `.select()` em todos os writes críticos para detectar bloqueio
@@ -104,9 +103,6 @@ export async function salvarVistoria(v: VistoriaInput) {
     .update({
       final_approval_status: v.finalApproval, // null | 'approved' | 'rejected'
       rejection_notes: v.finalApproval === "rejected" ? v.rejectionNotes ?? null : null,
-      charge_tow: v.chargeTow ?? false,
-      km_initial: v.kmInitial ?? null,
-      km_final: v.kmFinal ?? null,
     })
     .eq("id", entryId)
     .select("id, product_id, account_id");
