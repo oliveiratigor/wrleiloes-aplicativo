@@ -32,7 +32,7 @@ export type WizardState = {
   depositId: string;
   principalId: string;
   entryTypeId: string;
-  chargeTowing: boolean;
+  
   kmInitial: string;
   kmFinal: string;
   // passo 4 — características
@@ -67,7 +67,7 @@ export function emptyWizard(plate: string, mode: WizardMode = "new"): WizardStat
     depositId: "",
     principalId: "",
     entryTypeId: "",
-    chargeTowing: false,
+    
     kmInitial: "",
     kmFinal: "",
     attributeIds: [],
