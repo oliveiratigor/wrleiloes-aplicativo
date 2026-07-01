@@ -347,10 +347,10 @@ function CadastroPage() {
         </div>
         <div className="mb-3">
           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-            Placa
+            {data.plate ? "Placa" : "Chassi"}
           </p>
           <h1 className="font-mono text-3xl font-black tracking-[0.15em] text-foreground">
-            {placa}
+            {data.plate || data.chassis || placa}
           </h1>
           <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
         </div>
