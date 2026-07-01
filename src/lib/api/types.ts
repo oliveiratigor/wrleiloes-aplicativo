@@ -78,7 +78,7 @@ export type CadastrarProdutoPayload = {
   user_data: { uuid: string; account_uuid?: string };
   product: {
     uuid?: string;
-    plate: string;
+    plate: string | null;
     chassis?: string | null;
     renavam?: string | null;
     engine?: string | null;

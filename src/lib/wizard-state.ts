@@ -122,7 +122,7 @@ export function saveWizard(state: WizardState) {
       ...state,
       vistoria: state.vistoria ? serializeVistoria(state.vistoria) : null,
     };
-    localStorage.setItem(key(state.plate), JSON.stringify(toSave));
+    localStorage.setItem(key(state.plate || state.chassis), JSON.stringify(toSave));
   } catch {
     // ignore
   }

@@ -165,7 +165,7 @@ function CadastroPage() {
       user_data: { uuid: user.uuid, account_uuid: user.account_uuid ?? undefined },
       product: {
         uuid: data.productId,
-        plate: data.plate,
+        plate: data.plate?.trim() || null,
         chassis: data.chassis || null,
         renavam: data.renavam || null,
         engine: data.engine || null,
@@ -252,11 +252,11 @@ function CadastroPage() {
       }
       const finishedMode = data.mode;
       const finishedApproval = vistoria.finalApproval || "none";
-      clearWizard(data.plate);
+      clearWizard(data.plate || data.chassis);
       toast.success("Vistoria concluída");
       navigate({
         to: "/cadastro/$placa/sucesso",
-        params: { placa: data.plate },
+        params: { placa: data.plate || data.chassis },
         search: { mode: finishedMode, approval: finishedApproval },
         replace: true,
       });
@@ -347,10 +347,10 @@ function CadastroPage() {
         </div>
         <div className="mb-3">
           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-            Placa
+            {data.plate ? "Placa" : "Chassi"}
           </p>
           <h1 className="font-mono text-3xl font-black tracking-[0.15em] text-foreground">
-            {placa}
+            {data.plate || data.chassis || placa}
           </h1>
           <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
         </div>

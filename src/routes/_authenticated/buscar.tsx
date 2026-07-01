@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 
 type FoundResult = {
   plate: string;
+  navId: string;
   brand: string;
   model: string;
   colorId: string;
@@ -69,7 +70,7 @@ function BuscarPage() {
         buscarProduto(buscarPayload),
         id.kind === "plate"
           ? consultaVeiculo({ plate: id.plate })
-          : Promise.resolve({ data: null, error: null }),
+          : consultaVeiculo({ chassis: id.chassis }),
       ]);
       if (busca.error) {
         setError(busca.error);
@@ -84,19 +85,18 @@ function BuscarPage() {
             : "") || "";
 
       if (!busca.found || !busca.data) {
-        if (id.kind !== "plate") {
-          setError("Chassi não encontrado. Para novo cadastro, busque pela placa.");
-          return;
-        }
-        const wiz = emptyWizard(id.plate, "new");
+        const ident = id.kind === "plate" ? id.plate : id.chassis;
+        const wiz = emptyWizard(id.kind === "plate" ? id.plate : "", "new");
+        if (id.kind === "chassis") wiz.chassis = id.chassis;
         if (consulta.data) {
           applyConsulta(wiz, consulta.data);
         } else {
           wiz.isManual = true;
         }
-        pushRecent(id.plate);
+        pushRecent(ident);
         setFound({
-          plate: id.plate,
+          plate: id.kind === "plate" ? id.plate : "",
+          navId: ident,
           brand: wiz.brand,
           model: wiz.model,
           colorId: "",
@@ -150,6 +150,7 @@ function BuscarPage() {
 
       setFound({
         plate: navPlate || product.plate,
+        navId: navPlate || product.plate,
         brand: wiz.brand,
         model: wiz.model,
         colorId: product.color ?? "",
@@ -171,7 +172,7 @@ function BuscarPage() {
     saveWizard(found.wiz);
     navigate({
       to: "/cadastro/$placa",
-      params: { placa: found.plate },
+      params: { placa: found.navId },
       search: { step: 2 },
     });
   }
@@ -197,7 +198,7 @@ function BuscarPage() {
               </>
             ) : (
               <>
-                <Search className="h-4 w-4" /> Consultar placa
+                <Search className="h-4 w-4" /> Consultar
               </>
             )}
           </BottomBarButton>
@@ -244,7 +245,7 @@ function BuscarPage() {
         <div className="mt-6 space-y-4 rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-lg font-black tracking-widest">
-              {found.plate}
+              {found.navId}
             </span>
             <span
               className={cn(
