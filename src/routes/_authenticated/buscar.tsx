@@ -24,12 +24,6 @@ type FoundResult = {
   mode: WizardMode;
   wiz: WizardState;
 };
-  colorName: string;
-  entryDate: string | null;
-  entryTypeName: string | null;
-  mode: WizardMode;
-  wiz: WizardState;
-};
 
 const RECENT_KEY = "wr-recent-plates";
 
