@@ -165,7 +165,7 @@ function CadastroPage() {
       user_data: { uuid: user.uuid, account_uuid: user.account_uuid ?? undefined },
       product: {
         uuid: data.productId,
-        plate: data.plate,
+        plate: data.plate?.trim() || null,
         chassis: data.chassis || null,
         renavam: data.renavam || null,
         engine: data.engine || null,
