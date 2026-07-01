@@ -172,7 +172,7 @@ function BuscarPage() {
     saveWizard(found.wiz);
     navigate({
       to: "/cadastro/$placa",
-      params: { placa: found.plate },
+      params: { placa: found.navId },
       search: { step: 2 },
     });
   }
