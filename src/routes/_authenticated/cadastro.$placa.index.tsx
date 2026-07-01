@@ -252,11 +252,11 @@ function CadastroPage() {
       }
       const finishedMode = data.mode;
       const finishedApproval = vistoria.finalApproval || "none";
-      clearWizard(data.plate);
+      clearWizard(data.plate || data.chassis);
       toast.success("Vistoria concluída");
       navigate({
         to: "/cadastro/$placa/sucesso",
-        params: { placa: data.plate },
+        params: { placa: data.plate || data.chassis },
         search: { mode: finishedMode, approval: finishedApproval },
         replace: true,
       });
