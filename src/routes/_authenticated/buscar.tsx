@@ -150,6 +150,7 @@ function BuscarPage() {
 
       setFound({
         plate: navPlate || product.plate,
+        navId: navPlate || product.plate,
         brand: wiz.brand,
         model: wiz.model,
         colorId: product.color ?? "",
