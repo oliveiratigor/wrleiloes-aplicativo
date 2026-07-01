@@ -52,6 +52,17 @@ export async function buscarProduto(input: BuscarInput): Promise<{
   return { found: true, data, error: null };
 }
 
+export async function gerarPlacaProvisoria(tentativas = 8): Promise<string> {
+  for (let i = 0; i < tentativas; i++) {
+    const n = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+    const candidate = `WRRR${n}`;
+    const r = await buscarProduto({ plate: candidate });
+    if (!r.found) return candidate;
+  }
+  // fallback: o índice único no banco é a guarda final no save
+  return `WRRR${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
+}
+
 // Helper: a entrada está "aberta" quando o backend devolveu media/divergences
 // ligados à entrada vigente. O backend não devolve flag explícita, então
 // inferimos por `branch_uuid` presente + existência de media (entrada aberta)

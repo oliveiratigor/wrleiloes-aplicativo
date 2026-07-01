@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { FormField, formFieldClass } from "@/components/shared/FormField";
 import { tiposQuery, coresQuery, marcasQuery } from "@/lib/api/lookups";
+import { gerarPlacaProvisoria } from "@/lib/api/buscar";
 import type { WizardState } from "@/lib/wizard-state";
+import { Loader2 } from "lucide-react";
 
 export function StepVeiculo({
   data,
@@ -18,9 +22,20 @@ export function StepVeiculo({
   preFilled?: boolean;
   lockIdentity?: boolean;
 }) {
+  const [generatingPlate, setGeneratingPlate] = useState(false);
   const tipos = useSuspenseQuery(tiposQuery).data;
   const cores = useSuspenseQuery(coresQuery).data;
   const marcas = useSuspenseQuery(marcasQuery).data;
+
+  const handleGeneratePlate = async () => {
+    setGeneratingPlate(true);
+    try {
+      const plate = await gerarPlacaProvisoria();
+      update({ plate });
+    } finally {
+      setGeneratingPlate(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -42,6 +57,21 @@ export function StepVeiculo({
           disabled={lockIdentity}
           required
         />
+        {!lockIdentity && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2 w-full"
+            disabled={generatingPlate}
+            onClick={handleGeneratePlate}
+          >
+            {generatingPlate ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Gerar placa
+          </Button>
+        )}
       </FormField>
       <FormField label="Chassi">
         <Input
