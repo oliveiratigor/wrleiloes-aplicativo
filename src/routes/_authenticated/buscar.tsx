@@ -14,9 +14,16 @@ import { supabase } from "@/lib/supabase";
 
 type FoundResult = {
   plate: string;
+  navId: string;
   brand: string;
   model: string;
   colorId: string;
+  colorName: string;
+  entryDate: string | null;
+  entryTypeName: string | null;
+  mode: WizardMode;
+  wiz: WizardState;
+};
   colorName: string;
   entryDate: string | null;
   entryTypeName: string | null;
