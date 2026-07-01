@@ -245,7 +245,7 @@ function BuscarPage() {
         <div className="mt-6 space-y-4 rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-lg font-black tracking-widest">
-              {found.plate}
+              {found.navId}
             </span>
             <span
               className={cn(
