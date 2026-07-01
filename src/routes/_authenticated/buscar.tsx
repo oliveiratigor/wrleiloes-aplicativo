@@ -198,7 +198,7 @@ function BuscarPage() {
               </>
             ) : (
               <>
-                <Search className="h-4 w-4" /> Consultar placa
+                <Search className="h-4 w-4" /> Consultar
               </>
             )}
           </BottomBarButton>
