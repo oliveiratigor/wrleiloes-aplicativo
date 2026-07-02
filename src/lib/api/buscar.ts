@@ -63,19 +63,23 @@ export async function gerarPlacaProvisoria(tentativas = 8): Promise<string> {
   return `WRRR${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
 }
 
-// Helper: a entrada está "aberta" quando o backend devolveu media/divergences
-// ligados à entrada vigente. O backend não devolve flag explícita, então
-// inferimos por `branch_uuid` presente + existência de media (entrada aberta)
-// ou só dados operacionais herdados (reentrada).
+// Helper: a entrada está "aberta" quando o backend devolveu `entry_date` da
+// entrada vigente. O edge `buscar-produto` só popula `entry_date` a partir da
+// entrada ABERTA; em reentrada (última entrada com baixa) ele retorna `null`.
+// `entry_date` é o sinal primário e confiável, inclusive quando o cadastro foi
+// interrompido antes de fotos/divergências/vistoria.
 //
-// Regra prática: `media.length > 0` OU qualquer `*_discrepancies_uuid` populado
-// indica entrada aberta. Se `branch_uuid` veio mas media e divergências estão
-// vazias, é reentrada (dados herdados da última saída).
+// Como fallback, mantemos as verificações legadas (media/divergências/status
+// de vistoria) para cobrir layouts de resposta mais antigos.
 export function hasOpenEntry(
   data: Extract<BuscarProdutoResponse, { product: unknown }> | null,
 ): boolean {
   if (!data) return false;
   const p = data.product;
+  // Sinal primário e confiável: o backend só devolve entry_date a partir da
+  // entrada ABERTA. Em reentrada (última entrada com baixa) vem null. Cobre o
+  // caso de cadastro interrompido antes de qualquer foto/vistoria.
+  if (p.entry_date) return true;
   if (data.media.length > 0) return true;
   if (p.engine_discrepancies_uuid.length > 0) return true;
   if (p.chassis_discrepancies_uuid.length > 0) return true;
