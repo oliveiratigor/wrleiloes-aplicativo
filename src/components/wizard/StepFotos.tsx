@@ -13,7 +13,7 @@ import {
 import { compressImage } from "@/lib/image/compress";
 import { supabase } from "@/lib/supabase";
 import type { PhotoType } from "@/lib/api/types";
-import { PhotoEditor } from "./PhotoEditor";
+import { ImageCropperModal } from "./ImageCropperModal";
 
 type Slot = {
   type: PhotoType;
@@ -399,7 +399,7 @@ export function StepFotos({
       </div>
 
       {editingFile && (
-        <PhotoEditor
+        <ImageCropperModal
           file={editingFile.file}
           onConfirm={(blob) => {
             const processedFile = new File(
@@ -412,6 +412,11 @@ export function StepFotos({
             void uploadSingle(slot, processedFile);
           }}
           onCancel={() => setEditingFile(null)}
+          onRetake={() => {
+            const slotId = editingFile.slot.type.id;
+            setEditingFile(null);
+            requestAnimationFrame(() => inputsRef.current[slotId]?.click());
+          }}
         />
       )}
     </div>
