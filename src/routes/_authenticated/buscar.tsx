@@ -94,9 +94,10 @@ function BuscarPage() {
           wiz.isManual = true;
         }
         pushRecent(ident);
+        const navId = wiz.plate || wiz.chassis || ident;
         setFound({
-          plate: id.kind === "plate" ? id.plate : "",
-          navId: ident,
+          plate: wiz.plate,
+          navId,
           brand: wiz.brand,
           model: wiz.model,
           colorId: "",
@@ -118,8 +119,8 @@ function BuscarPage() {
       wiz.chassis = product.chassis ?? "";
       wiz.renavam = product.renavam ?? "";
       wiz.engine = product.engine ?? "";
-      wiz.colorId = product.color ?? "";
-      wiz.color = "";
+      wiz.colorId = "";
+      wiz.color = product.color ?? "";
       wiz.mileage = product.mileage != null ? String(product.mileage) : "";
       wiz.hasKey = !!product.has_key;
       wiz.typeId = product.type_uuid ?? "";
@@ -136,25 +137,23 @@ function BuscarPage() {
 
       pushRecent(navPlate || product.plate);
 
-      const [colorResult, entryTypeResult] = await Promise.all([
-        product.color
-          ? supabase.from("colors").select("name").eq("id", product.color).maybeSingle()
-          : Promise.resolve({ data: null as { name: string } | null }),
-        product.entry_type_uuid
-          ? supabase.from("entry_types").select("name").eq("id", product.entry_type_uuid).maybeSingle()
-          : Promise.resolve({ data: null as { name: string } | null }),
-      ]);
+      const entryTypeResult = product.entry_type_uuid
+        ? await supabase
+            .from("entry_types")
+            .select("name")
+            .eq("id", product.entry_type_uuid)
+            .maybeSingle()
+        : { data: null as { name: string } | null };
 
-      wiz.color = colorResult.data?.name ?? "";
-
+      const navId = wiz.plate || wiz.chassis;
 
       setFound({
-        plate: navPlate || product.plate,
-        navId: navPlate || product.plate,
+        plate: wiz.plate,
+        navId,
         brand: wiz.brand,
         model: wiz.model,
-        colorId: product.color ?? "",
-        colorName: colorResult.data?.name ?? "",
+        colorId: "",
+        colorName: product.color ?? "",
         entryDate: open ? (product.entry_date ?? null) : null,
         entryTypeName: entryTypeResult.data?.name ?? null,
         mode,
