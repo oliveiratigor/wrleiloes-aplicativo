@@ -136,6 +136,9 @@ function BuscarPage() {
       wiz.principalId = product.consignor_uuid ?? "";
       wiz.entryTypeId = product.entry_type_uuid ?? "";
 
+      // Preenche apenas lacunas com a consulta WR; o banco é a fonte de verdade.
+      if (consulta.data) fillGapsFromConsulta(wiz, consulta.data);
+
       pushRecent(navPlate || product.plate);
 
       const entryTypeResult = product.entry_type_uuid
