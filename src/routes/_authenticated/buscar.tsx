@@ -136,6 +136,9 @@ function BuscarPage() {
       wiz.principalId = product.consignor_uuid ?? "";
       wiz.entryTypeId = product.entry_type_uuid ?? "";
 
+      // Preenche apenas lacunas com a consulta WR; o banco é a fonte de verdade.
+      if (consulta.data) fillGapsFromConsulta(wiz, consulta.data);
+
       pushRecent(navPlate || product.plate);
 
       const entryTypeResult = product.entry_type_uuid
@@ -360,36 +363,81 @@ function BuscarPage() {
   );
 }
 
-function applyConsulta(
-  wiz: WizardState,
-  c: {
-    placa?: string;
-    chassi?: string;
-    renavam?: string;
-    marca?: string;
-    modelo?: string;
-    cor?: string;
-    combustivel?: string;
-    ano_fabricacao?: string;
-    ano_modelo?: string;
-    motor?: string;
-    cod_fipe?: string;
-  },
-) {
-  wiz.plate = c.placa || wiz.plate;
-  wiz.chassis = c.chassi || "";
-  wiz.renavam = c.renavam || "";
-  wiz.engine = c.motor || "";
-  wiz.brand = c.marca || "";
-  wiz.model = c.modelo || "";
-  wiz.color = c.cor || "";
-  wiz.fuel = (c.combustivel || "")
-    .split("/")
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
-    .join("/");
-  wiz.yearManufacture = c.ano_fabricacao || "";
-  wiz.yearModel = c.ano_modelo || "";
-  wiz.fipeCodigo = c.cod_fipe || "";
+type ConsultaLike = {
+  placa?: string;
+  chassi?: string;
+  renavam?: string;
+  marca?: string;
+  modelo?: string;
+  cor?: string;
+  combustivel?: string;
+  ano_fabricacao?: string;
+  ano_modelo?: string;
+  motor?: string;
+  cod_fipe?: string;
+};
+
+/**
+ * Mapeia/normaliza a resposta da consulta WR para os campos do wizard.
+ * Fonte única de normalização (usada tanto no ramo "não encontrado" quanto
+ * no preenchimento de lacunas do ramo "encontrado").
+ */
+function mapConsulta(c: ConsultaLike) {
+  return {
+    plate: c.placa || "",
+    chassis: c.chassi || "",
+    renavam: c.renavam || "",
+    engine: c.motor || "",
+    brand: c.marca || "",
+    model: c.modelo || "",
+    color: c.cor || "",
+    fuel: (c.combustivel || "")
+      .split("/")
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+      .join("/"),
+    yearManufacture: c.ano_fabricacao || "",
+    yearModel: c.ano_modelo || "",
+    fipeCodigo: c.cod_fipe || "",
+  };
+}
+
+const GAP_FILL_FIELDS = [
+  "chassis",
+  "renavam",
+  "engine",
+  "brand",
+  "model",
+  "color",
+  "fuel",
+  "yearManufacture",
+  "yearModel",
+  "fipeCodigo",
+] as const;
+
+/** Preenche APENAS campos vazios no wizard. Nunca sobrescreve o banco. */
+function fillGapsFromConsulta(wiz: WizardState, c: ConsultaLike) {
+  const m = mapConsulta(c);
+  for (const key of GAP_FILL_FIELDS) {
+    const current = (wiz[key] ?? "") as string;
+    if (!current.trim() && m[key]) {
+      (wiz[key] as string) = m[key];
+    }
+  }
+}
+
+function applyConsulta(wiz: WizardState, c: ConsultaLike) {
+  const m = mapConsulta(c);
+  wiz.plate = m.plate || wiz.plate;
+  wiz.chassis = m.chassis;
+  wiz.renavam = m.renavam;
+  wiz.engine = m.engine;
+  wiz.brand = m.brand;
+  wiz.model = m.model;
+  wiz.color = m.color;
+  wiz.fuel = m.fuel;
+  wiz.yearManufacture = m.yearManufacture;
+  wiz.yearModel = m.yearModel;
+  wiz.fipeCodigo = m.fipeCodigo;
 }

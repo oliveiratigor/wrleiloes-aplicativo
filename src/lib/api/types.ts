@@ -60,8 +60,8 @@ export type BuscarProdutoResponse =
       };
       fipe_data: {
         fipe_codigo: string | null;
-        model: string | null; // FIPE model code (não é o nome)
-        brand: string | null; // FIPE brand code (não é o nome — não casa com tabela brands)
+        model: string | null; // nome do modelo (products.model); código FIPE apenas como fallback
+        brand: string | null; // nome da marca (products.brand), casa com a tabela brands; código FIPE como fallback
         year: string | null;
         year_manufacture?: string | null;
         year_model?: string | null;
