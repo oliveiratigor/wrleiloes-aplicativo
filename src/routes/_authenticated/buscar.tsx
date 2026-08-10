@@ -129,7 +129,8 @@ function BuscarPage() {
       wiz.fuel = fipe_data.fuel ?? "";
       wiz.fipeCodigo = fipe_data.fipe_codigo ?? "";
       wiz.fipePrice = fipe_data.price != null ? String(fipe_data.price) : "";
-      wiz.yearModel = fipe_data.year ?? "";
+      wiz.yearManufacture = fipe_data.year_manufacture ?? fipe_data.year ?? "";
+      wiz.yearModel = fipe_data.year_model ?? fipe_data.year ?? "";
       wiz.branchId = product.branch_uuid ?? "";
       wiz.depositId = product.deposit_uuid ?? "";
       wiz.principalId = product.consignor_uuid ?? "";
