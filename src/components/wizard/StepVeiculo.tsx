@@ -27,6 +27,17 @@ export function StepVeiculo({
   const cores = useSuspenseQuery(coresQuery).data;
   const marcas = useSuspenseQuery(marcasQuery).data;
 
+  // Resolve o id da cor a partir do nome (products.color guarda o NOME).
+  useEffect(() => {
+    if (data.colorId) return;
+    const name = data.color?.trim();
+    if (!name) return;
+    const match = cores.find(
+      (c) => c.label.trim().toLowerCase() === name.toLowerCase(),
+    );
+    if (match) update({ colorId: match.value, color: match.label });
+  }, [data.colorId, data.color, cores, update]);
+
   const handleGeneratePlate = async () => {
     setGeneratingPlate(true);
     try {
