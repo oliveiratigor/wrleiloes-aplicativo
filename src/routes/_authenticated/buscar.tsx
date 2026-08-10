@@ -94,9 +94,10 @@ function BuscarPage() {
           wiz.isManual = true;
         }
         pushRecent(ident);
+        const navId = wiz.plate || wiz.chassis || ident;
         setFound({
-          plate: id.kind === "plate" ? id.plate : "",
-          navId: ident,
+          plate: wiz.plate,
+          navId,
           brand: wiz.brand,
           model: wiz.model,
           colorId: "",
@@ -118,8 +119,8 @@ function BuscarPage() {
       wiz.chassis = product.chassis ?? "";
       wiz.renavam = product.renavam ?? "";
       wiz.engine = product.engine ?? "";
-      wiz.colorId = product.color ?? "";
-      wiz.color = "";
+      wiz.colorId = "";
+      wiz.color = product.color ?? "";
       wiz.mileage = product.mileage != null ? String(product.mileage) : "";
       wiz.hasKey = !!product.has_key;
       wiz.typeId = product.type_uuid ?? "";
