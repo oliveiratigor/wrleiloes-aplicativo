@@ -90,6 +90,8 @@ export type CadastrarProdutoPayload = {
     deposit_uuid?: string | null;
     consignor_uuid?: string | null;
     entry_type_uuid?: string | null;
+    year_manufacture?: number | null;
+    year_model?: number | null;
     charge_towing?: boolean;
     km_initial?: number | null;
     km_final?: number | null;
