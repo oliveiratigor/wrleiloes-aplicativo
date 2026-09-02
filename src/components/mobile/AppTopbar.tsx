@@ -18,7 +18,7 @@ export function AppTopbar({
     try {
       await signOut();
     } finally {
-      navigate({ to: "/auth", replace: true });
+      navigate({ to: "/auth", search: { redirect: "" }, replace: true });
     }
   }
 
