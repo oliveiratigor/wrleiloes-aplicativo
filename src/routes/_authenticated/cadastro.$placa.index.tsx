@@ -193,12 +193,17 @@ function CadastroPage() {
     });
     setSaving(false);
     if (!res.ok) {
+      console.error("[saveStep3] falha ao cadastrar produto", res);
       if (res.code === "OPEN_ENTRY_EXISTS") {
         setError(
-          "Já existe entrada aberta para este veículo. Volte à busca e abra como edição.",
+          res.message ||
+            "Este veículo já possui uma entrada em aberto no pátio. Volte à busca e abra como edição.",
         );
       } else {
-        setError(`${res.code}: ${res.message}`);
+        setError(
+          res.message ||
+            "Não foi possível salvar. Verifique sua conexão e tente novamente.",
+        );
       }
       return;
     }

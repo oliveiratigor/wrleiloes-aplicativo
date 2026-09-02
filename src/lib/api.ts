@@ -73,6 +73,20 @@ async function shipTelemetry(entry: DiagnosticEntry) {
  * Wrapper único de chamadas a Edge Functions.
  * Mede latência, grava log local (ring buffer) e tenta enviar telemetria.
  */
+const GENERIC_ERROR =
+  "Não foi possível concluir a operação. Verifique sua conexão e tente novamente.";
+
+/** Erros crus do supabase-js que nunca devem chegar ao usuário final. */
+function isRawClientError(msg?: string | null): boolean {
+  if (!msg) return true;
+  return (
+    /non-2xx status code/i.test(msg) ||
+    /Failed to (fetch|send a request)/i.test(msg) ||
+    /^FunctionsHttpError/i.test(msg) ||
+    /NetworkError/i.test(msg)
+  );
+}
+
 export async function apiCall<TReq, TRes>(
   fn: string,
   payload?: TReq,
@@ -90,16 +104,46 @@ export async function apiCall<TReq, TRes>(
     });
     data = (res.data as TRes) ?? null;
     if (res.error) {
-      errorMsg = res.error.message;
-      const ctx = (res.error as unknown as { context?: { status?: number } }).context;
+      console.error(`[apiCall] ${fn} falhou`, res.error);
+      const ctx = (
+        res.error as unknown as { context?: { status?: number; json?: () => Promise<unknown> } }
+      ).context;
       status = ctx?.status ?? null;
+
+      // supabase-js v2: o corpo da função (com a mensagem em PT-BR) fica em error.context
+      let body: unknown = null;
+      try {
+        if (ctx && typeof ctx.json === "function") {
+          body = await ctx.json();
+        }
+      } catch {
+        body = null;
+      }
+
+      if (body && typeof body === "object") {
+        // devolve o corpo da função para quem chamou tratar códigos (ex.: OPEN_ENTRY_EXISTS)
+        data = body as TRes;
+        const bodyMsg = (body as { message?: unknown }).message;
+        if (typeof bodyMsg === "string" && bodyMsg.trim()) {
+          errorMsg = bodyMsg.trim();
+        }
+      }
+
+      if (!errorMsg) {
+        errorMsg = isRawClientError(res.error.message)
+          ? GENERIC_ERROR
+          : res.error.message;
+      }
     } else {
       ok = true;
       status = 200;
     }
   } catch (e) {
-    errorMsg = e instanceof Error ? e.message : String(e);
+    console.error(`[apiCall] ${fn} exceção`, e);
+    const raw = e instanceof Error ? e.message : String(e);
+    errorMsg = isRawClientError(raw) ? GENERIC_ERROR : raw;
   }
+
 
   const entry: DiagnosticEntry = {
     ts: new Date().toISOString(),

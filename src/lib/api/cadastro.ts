@@ -31,9 +31,16 @@ export async function cadastrarProduto(
   >("cadastrar-produto", finalPayload);
 
 
-  if (error || !data) {
-    return { ok: false, code: "NETWORK", message: error ?? "Erro de rede." };
+  if (!data) {
+    return {
+      ok: false,
+      code: "NETWORK",
+      message:
+        error ??
+        "Não foi possível salvar. Verifique sua conexão e tente novamente.",
+    };
   }
+
   if (data.success === 1 && data.uuid && data.product_entry_uuid) {
     return {
       ok: true,
