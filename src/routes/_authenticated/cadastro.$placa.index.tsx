@@ -151,24 +151,68 @@ function CadastroPage() {
     return "Cadastrar veículo do zero";
   }, [data.mode]);
 
-  async function saveStep3() {
-    if (!user?.uuid) {
-      await signOut();
-      navigate({
-        to: "/auth",
-        search: {
-          redirect: window.location.pathname + window.location.search,
-        },
-        replace: true,
-      });
-      return;
-    }
-    if (!data.branchId) {
-      setError("Filial é obrigatória.");
+  // Obrigatórios por passo — bloqueiam o botão do rodapé e apontam o campo.
+  const missingStep2 = useMemo(() => {
+    const e: Record<string, string> = {};
+    if (!data.colorId) e.colorId = "Selecione a cor";
+    if (!data.typeId) e.typeId = "Selecione o tipo de veículo";
+    return e;
+  }, [data.colorId, data.typeId]);
+
+  const missingStep3 = useMemo(() => {
+    const e: Record<string, string> = {};
+    if (!data.branchId) e.branchId = "Selecione a filial";
+    if (!data.depositId) e.depositId = "Selecione o depósito";
+    if (!data.principalId) e.principalId = "Selecione o comitente";
+    if (!data.entryTypeId) e.entryTypeId = "Selecione o tipo de entrada";
+    return e;
+  }, [data.branchId, data.depositId, data.principalId, data.entryTypeId]);
+
+  function clearServerError() {
+    setError(null);
+    setErrorAction(null);
+    setErrorRequestId(null);
+  }
+
+  async function goToLogin() {
+    await signOut();
+    navigate({
+      to: "/auth",
+      search: { redirect: window.location.pathname + window.location.search },
+      replace: true,
+    });
+  }
+
+  /** Abre o cadastro já existente em modo edição (sem sair do wizard). */
+  async function openExisting() {
+    const ident = data.plate?.trim() || data.chassis?.trim();
+    if (!ident) {
+      navigate({ to: "/buscar" });
       return;
     }
     setSaving(true);
-    setError(null);
+    const res = await buscarProduto(
+      data.plate?.trim() ? { plate: data.plate.trim() } : { chassis: ident },
+    );
+    setSaving(false);
+    if (!res.found || !res.data) {
+      navigate({ to: "/buscar" });
+      return;
+    }
+    update({ productId: res.data.product.uuid, mode: "edit" });
+    clearServerError();
+    toast.success("Cadastro existente aberto em modo edição.");
+  }
+
+  async function saveStep3() {
+    if (!user?.uuid) {
+      await goToLogin();
+      return;
+    }
+    if (Object.keys(missingStep3).length > 0) return;
+    setSaving(true);
+    clearServerError();
+
 
     const res = await cadastrarProduto({
       user_data: { uuid: user.uuid, account_uuid: user.account_uuid ?? undefined },
