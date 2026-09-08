@@ -27,6 +27,10 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { signOut } from "@/lib/auth";
 import { cadastrarProduto } from "@/lib/api/cadastro";
+import {
+  describeCadastroError,
+  type CadastroErrorAction,
+} from "@/lib/api/error-messages";
 import { salvarVistoria } from "@/lib/api/vistoria";
 import { buscarProduto } from "@/lib/api/buscar";
 import { toast } from "sonner";
@@ -61,6 +65,11 @@ function CadastroPage() {
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorAction, setErrorAction] = useState<{
+    kind: CadastroErrorAction;
+    label: string;
+  } | null>(null);
+  const [errorRequestId, setErrorRequestId] = useState<string | null>(null);
   const [requiredOk, setRequiredOk] = useState(false);
   const [vistoria, setVistoria] = useState<VistoriaForm>(() => {
     const saved = loadWizard(placa);
