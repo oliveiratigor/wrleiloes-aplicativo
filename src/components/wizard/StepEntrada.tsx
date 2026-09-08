@@ -55,6 +55,7 @@ export function StepEntrada({
   return (
     <div className="space-y-5">
       <FormField
+        error={errors?.branchId}
         label={
           <span className="flex items-center gap-2">
             Filial *
@@ -72,6 +73,7 @@ export function StepEntrada({
           onChange={(v) => update({ branchId: v })}
           placeholder="Selecionar filial…"
           disabled={branchLocked}
+          invalid={!!errors?.branchId}
         />
         {branchForbidden && (
           <Alert variant="destructive" className="mt-2">
@@ -90,25 +92,28 @@ export function StepEntrada({
           </Alert>
         )}
       </FormField>
-      <FormField label="Depósito">
+      <FormField label="Depósito *" error={errors?.depositId}>
         <SearchableSelect
           options={depositos}
           value={data.depositId}
           onChange={(v) => update({ depositId: v })}
+          invalid={!!errors?.depositId}
         />
       </FormField>
-      <FormField label="Comitente">
+      <FormField label="Comitente *" error={errors?.principalId}>
         <SearchableSelect
           options={comitentes}
           value={data.principalId}
           onChange={(v) => update({ principalId: v })}
+          invalid={!!errors?.principalId}
         />
       </FormField>
-      <FormField label="Tipo de entrada">
+      <FormField label="Tipo de entrada *" error={errors?.entryTypeId}>
         <SearchableSelect
           options={tiposEntrada}
           value={data.entryTypeId}
           onChange={(v) => update({ entryTypeId: v })}
+          invalid={!!errors?.entryTypeId}
         />
       </FormField>
     </div>
