@@ -333,12 +333,17 @@ function CadastroPage() {
         </BottomBarButton>
       )}
       {step === 2 && (
-        <BottomBarButton onClick={() => go(3)}>Continuar</BottomBarButton>
+        <BottomBarButton
+          onClick={() => go(3)}
+          disabled={Object.keys(missingStep2).length > 0}
+        >
+          Continuar
+        </BottomBarButton>
       )}
       {step === 3 && (
         <BottomBarButton
           onClick={saveStep3}
-          disabled={saving || !data.branchId}
+          disabled={saving || Object.keys(missingStep3).length > 0}
         >
           {saving ? (
             <>
