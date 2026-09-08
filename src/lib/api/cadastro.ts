@@ -9,7 +9,7 @@ export type CadastroResult =
       isUpdate: boolean;
       message: string;
     }
-  | { ok: false; code: string; message: string };
+  | { ok: false; code: string; message: string; requestId?: string };
 
 export async function cadastrarProduto(
   payload: CadastrarProdutoPayload,
