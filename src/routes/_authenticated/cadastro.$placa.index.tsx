@@ -247,17 +247,15 @@ function CadastroPage() {
     setSaving(false);
     if (!res.ok) {
       console.error("[saveStep3] falha ao cadastrar produto", res);
-      if (res.code === "OPEN_ENTRY_EXISTS") {
-        setError(
-          res.message ||
-            "Este veículo já possui uma entrada em aberto no pátio. Volte à busca e abra como edição.",
-        );
-      } else {
-        setError(
-          res.message ||
-            "Não foi possível salvar. Verifique sua conexão e tente novamente.",
-        );
-      }
+      const info = describeCadastroError(res.code);
+      setError(info.message);
+      setErrorAction(
+        info.action ? { kind: info.action, label: info.actionLabel ?? "" } : null,
+      );
+      setErrorRequestId(
+        info.showRequestId && res.requestId ? res.requestId.slice(0, 8) : null,
+      );
+      if (info.action === "sign-in") void goToLogin();
       return;
     }
     update({ productId: res.productId, entryId: res.entryId, mode: "edit" });
