@@ -88,7 +88,7 @@ function BuscarPage() {
         const ident = id.kind === "plate" ? id.plate : id.chassis;
         const wiz = emptyWizard(id.kind === "plate" ? id.plate : "", "new");
         if (id.kind === "chassis") wiz.chassis = id.chassis;
-        if (consulta.data) {
+        if (consulta.data && hasUsefulConsulta(consulta.data)) {
           applyConsulta(wiz, consulta.data);
         } else {
           wiz.isManual = true;
@@ -401,6 +401,26 @@ function mapConsulta(c: ConsultaLike) {
     yearModel: c.ano_modelo || "",
     fipeCodigo: c.cod_fipe || "",
   };
+}
+
+/**
+ * Considera a consulta SEM retorno útil quando nenhum dos campos que
+ * realmente identificam o veículo vem preenchido (após trim). A WR responde
+ * 200 com objeto de strings vazias para veículos estrangeiros/sem FIPE.
+ */
+const USEFUL_CONSULTA_FIELDS = [
+  "brand",
+  "model",
+  "chassis",
+  "color",
+  "yearManufacture",
+  "yearModel",
+  "fipeCodigo",
+] as const;
+
+function hasUsefulConsulta(c: ConsultaLike): boolean {
+  const m = mapConsulta(c);
+  return USEFUL_CONSULTA_FIELDS.some((key) => (m[key] ?? "").trim() !== "");
 }
 
 const GAP_FILL_FIELDS = [
