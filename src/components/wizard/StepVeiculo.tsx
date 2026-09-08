@@ -16,11 +16,13 @@ export function StepVeiculo({
   update,
   preFilled,
   lockIdentity,
+  errors,
 }: {
   data: WizardState;
   update: (p: Partial<WizardState>) => void;
   preFilled?: boolean;
   lockIdentity?: boolean;
+  errors?: Record<string, string>;
 }) {
   const [generatingPlate, setGeneratingPlate] = useState(false);
   const tipos = useSuspenseQuery(tiposQuery).data;
@@ -52,7 +54,8 @@ export function StepVeiculo({
     <div className="space-y-5">
       {data.isManual && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          ℹ️ Veículo sem dados FIPE. Preencha marca e modelo manualmente.
+          ℹ️ Não foi possível consultar os dados deste veículo. Preencha os
+          campos manualmente.
         </div>
       )}
       {preFilled && !data.isManual && (
