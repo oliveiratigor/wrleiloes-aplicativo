@@ -129,10 +129,11 @@ export function StepVeiculo({
           onChange={(e) => update({ model: e.target.value.toUpperCase() })}
         />
       </FormField>
-      <FormField label="Cor">
+      <FormField label="Cor *" error={errors?.colorId}>
         <SearchableSelect
           options={cores}
           value={data.colorId}
+          invalid={!!errors?.colorId}
           onChange={(v) => {
             const selected = cores.find((c) => c.value === v);
             update({ colorId: v, color: selected?.label ?? "" });
@@ -175,11 +176,12 @@ export function StepVeiculo({
           onChange={(e) => update({ mileage: e.target.value.replace(/\D/g, "") })}
         />
       </FormField>
-      <FormField label="Tipo">
+      <FormField label="Tipo de veículo *" error={errors?.typeId}>
         <SearchableSelect
           options={tipos}
           value={data.typeId}
           onChange={(v) => update({ typeId: v })}
+          invalid={!!errors?.typeId}
         />
       </FormField>
       <FormField label="Tem chave">
