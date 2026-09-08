@@ -116,6 +116,8 @@ export type CadastrarProdutoResponse = {
   is_update?: boolean;
   message?: string;
   code?: string;
+  /** Identificador do request devolvido nas respostas de erro (para suporte). */
+  request_id?: string;
 };
 
 export type PresignFile = {
