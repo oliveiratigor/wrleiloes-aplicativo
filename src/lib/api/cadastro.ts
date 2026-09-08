@@ -54,5 +54,6 @@ export async function cadastrarProduto(
     ok: false,
     code: data.code ?? "UNKNOWN",
     message: data.message ?? "Falha ao salvar.",
+    requestId: data.request_id,
   };
 }

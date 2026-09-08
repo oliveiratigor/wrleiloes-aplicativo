@@ -17,9 +17,11 @@ import type { WizardState } from "@/lib/wizard-state";
 export function StepEntrada({
   data,
   update,
+  errors,
 }: {
   data: WizardState;
   update: (p: Partial<WizardState>) => void;
+  errors?: Record<string, string>;
 }) {
   const { user } = useAuth();
   const filiais = useSuspenseQuery(filiaisQueryFor(user)).data;
