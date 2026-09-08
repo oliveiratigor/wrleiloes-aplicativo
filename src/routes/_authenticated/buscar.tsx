@@ -88,7 +88,7 @@ function BuscarPage() {
         const ident = id.kind === "plate" ? id.plate : id.chassis;
         const wiz = emptyWizard(id.kind === "plate" ? id.plate : "", "new");
         if (id.kind === "chassis") wiz.chassis = id.chassis;
-        if (consulta.data) {
+        if (consulta.data && hasUsefulConsulta(consulta.data)) {
           applyConsulta(wiz, consulta.data);
         } else {
           wiz.isManual = true;
