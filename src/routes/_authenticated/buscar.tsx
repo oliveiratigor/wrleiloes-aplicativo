@@ -403,6 +403,26 @@ function mapConsulta(c: ConsultaLike) {
   };
 }
 
+/**
+ * Considera a consulta SEM retorno útil quando nenhum dos campos que
+ * realmente identificam o veículo vem preenchido (após trim). A WR responde
+ * 200 com objeto de strings vazias para veículos estrangeiros/sem FIPE.
+ */
+const USEFUL_CONSULTA_FIELDS = [
+  "brand",
+  "model",
+  "chassis",
+  "color",
+  "yearManufacture",
+  "yearModel",
+  "fipeCodigo",
+] as const;
+
+function hasUsefulConsulta(c: ConsultaLike): boolean {
+  const m = mapConsulta(c);
+  return USEFUL_CONSULTA_FIELDS.some((key) => (m[key] ?? "").trim() !== "");
+}
+
 const GAP_FILL_FIELDS = [
   "chassis",
   "renavam",
