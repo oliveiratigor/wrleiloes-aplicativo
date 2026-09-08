@@ -424,7 +424,28 @@ function CadastroPage() {
       <div className="mt-4 space-y-4">
         {error && (
           <Alert variant="destructive" className="rounded-xl">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              <span className="block">{error}</span>
+              {errorRequestId && (
+                <span className="mt-1 block text-[11px] opacity-80">
+                  Código: {errorRequestId}
+                </span>
+              )}
+              {errorAction && errorAction.kind !== "sign-in" && (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() =>
+                    errorAction.kind === "open-existing"
+                      ? void openExisting()
+                      : navigate({ to: "/buscar" })
+                  }
+                  className="mt-3 w-full rounded-xl bg-destructive px-3 py-2 text-xs font-bold text-destructive-foreground disabled:opacity-60"
+                >
+                  {errorAction.label}
+                </button>
+              )}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -439,13 +460,14 @@ function CadastroPage() {
                 update={update}
                 preFilled={data.mode === "new" && !!data.brand}
                 lockIdentity={data.mode !== "new"}
+                errors={missingStep2}
               />
             </Suspense>
           )}
 
           {step === 3 && (
             <Suspense fallback={<WizardLoading />}>
-              <StepEntrada data={data} update={update} />
+              <StepEntrada data={data} update={update} errors={missingStep3} />
             </Suspense>
           )}
 
