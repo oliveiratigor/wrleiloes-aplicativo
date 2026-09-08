@@ -18,17 +18,29 @@ export function FormField({
   label,
   children,
   className,
+  error,
 }: {
   label: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  error?: string | null;
 }) {
   return (
     <div className={cn("space-y-2", className)}>
-      <Label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+      <Label
+        className={cn(
+          "block text-[11px] font-semibold uppercase tracking-[0.12em]",
+          error ? "text-destructive" : "text-muted-foreground",
+        )}
+      >
         {label}
       </Label>
       {children}
+      {error && (
+        <p className="text-[12px] font-medium normal-case text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

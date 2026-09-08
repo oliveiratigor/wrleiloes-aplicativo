@@ -27,6 +27,10 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { signOut } from "@/lib/auth";
 import { cadastrarProduto } from "@/lib/api/cadastro";
+import {
+  describeCadastroError,
+  type CadastroErrorAction,
+} from "@/lib/api/error-messages";
 import { salvarVistoria } from "@/lib/api/vistoria";
 import { buscarProduto } from "@/lib/api/buscar";
 import { toast } from "sonner";
@@ -61,6 +65,11 @@ function CadastroPage() {
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorAction, setErrorAction] = useState<{
+    kind: CadastroErrorAction;
+    label: string;
+  } | null>(null);
+  const [errorRequestId, setErrorRequestId] = useState<string | null>(null);
   const [requiredOk, setRequiredOk] = useState(false);
   const [vistoria, setVistoria] = useState<VistoriaForm>(() => {
     const saved = loadWizard(placa);
@@ -142,24 +151,68 @@ function CadastroPage() {
     return "Cadastrar veículo do zero";
   }, [data.mode]);
 
-  async function saveStep3() {
-    if (!user?.uuid) {
-      await signOut();
-      navigate({
-        to: "/auth",
-        search: {
-          redirect: window.location.pathname + window.location.search,
-        },
-        replace: true,
-      });
-      return;
-    }
-    if (!data.branchId) {
-      setError("Filial é obrigatória.");
+  // Obrigatórios por passo — bloqueiam o botão do rodapé e apontam o campo.
+  const missingStep2 = useMemo(() => {
+    const e: Record<string, string> = {};
+    if (!data.colorId) e.colorId = "Selecione a cor";
+    if (!data.typeId) e.typeId = "Selecione o tipo de veículo";
+    return e;
+  }, [data.colorId, data.typeId]);
+
+  const missingStep3 = useMemo(() => {
+    const e: Record<string, string> = {};
+    if (!data.branchId) e.branchId = "Selecione a filial";
+    if (!data.depositId) e.depositId = "Selecione o depósito";
+    if (!data.principalId) e.principalId = "Selecione o comitente";
+    if (!data.entryTypeId) e.entryTypeId = "Selecione o tipo de entrada";
+    return e;
+  }, [data.branchId, data.depositId, data.principalId, data.entryTypeId]);
+
+  function clearServerError() {
+    setError(null);
+    setErrorAction(null);
+    setErrorRequestId(null);
+  }
+
+  async function goToLogin() {
+    await signOut();
+    navigate({
+      to: "/auth",
+      search: { redirect: window.location.pathname + window.location.search },
+      replace: true,
+    });
+  }
+
+  /** Abre o cadastro já existente em modo edição (sem sair do wizard). */
+  async function openExisting() {
+    const ident = data.plate?.trim() || data.chassis?.trim();
+    if (!ident) {
+      navigate({ to: "/buscar" });
       return;
     }
     setSaving(true);
-    setError(null);
+    const res = await buscarProduto(
+      data.plate?.trim() ? { plate: data.plate.trim() } : { chassis: ident },
+    );
+    setSaving(false);
+    if (!res.found || !res.data) {
+      navigate({ to: "/buscar" });
+      return;
+    }
+    update({ productId: res.data.product.uuid, mode: "edit" });
+    clearServerError();
+    toast.success("Cadastro existente aberto em modo edição.");
+  }
+
+  async function saveStep3() {
+    if (!user?.uuid) {
+      await goToLogin();
+      return;
+    }
+    if (Object.keys(missingStep3).length > 0) return;
+    setSaving(true);
+    clearServerError();
+
 
     const res = await cadastrarProduto({
       user_data: { uuid: user.uuid, account_uuid: user.account_uuid ?? undefined },
@@ -194,17 +247,15 @@ function CadastroPage() {
     setSaving(false);
     if (!res.ok) {
       console.error("[saveStep3] falha ao cadastrar produto", res);
-      if (res.code === "OPEN_ENTRY_EXISTS") {
-        setError(
-          res.message ||
-            "Este veículo já possui uma entrada em aberto no pátio. Volte à busca e abra como edição.",
-        );
-      } else {
-        setError(
-          res.message ||
-            "Não foi possível salvar. Verifique sua conexão e tente novamente.",
-        );
-      }
+      const info = describeCadastroError(res.code);
+      setError(info.message);
+      setErrorAction(
+        info.action ? { kind: info.action, label: info.actionLabel ?? "" } : null,
+      );
+      setErrorRequestId(
+        info.showRequestId && res.requestId ? res.requestId.slice(0, 8) : null,
+      );
+      if (info.action === "sign-in") void goToLogin();
       return;
     }
     update({ productId: res.productId, entryId: res.entryId, mode: "edit" });
@@ -282,12 +333,17 @@ function CadastroPage() {
         </BottomBarButton>
       )}
       {step === 2 && (
-        <BottomBarButton onClick={() => go(3)}>Continuar</BottomBarButton>
+        <BottomBarButton
+          onClick={() => go(3)}
+          disabled={Object.keys(missingStep2).length > 0}
+        >
+          Continuar
+        </BottomBarButton>
       )}
       {step === 3 && (
         <BottomBarButton
           onClick={saveStep3}
-          disabled={saving || !data.branchId}
+          disabled={saving || Object.keys(missingStep3).length > 0}
         >
           {saving ? (
             <>
@@ -368,7 +424,28 @@ function CadastroPage() {
       <div className="mt-4 space-y-4">
         {error && (
           <Alert variant="destructive" className="rounded-xl">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              <span className="block">{error}</span>
+              {errorRequestId && (
+                <span className="mt-1 block text-[11px] opacity-80">
+                  Código: {errorRequestId}
+                </span>
+              )}
+              {errorAction && errorAction.kind !== "sign-in" && (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() =>
+                    errorAction.kind === "open-existing"
+                      ? void openExisting()
+                      : navigate({ to: "/buscar" })
+                  }
+                  className="mt-3 w-full rounded-xl bg-destructive px-3 py-2 text-xs font-bold text-destructive-foreground disabled:opacity-60"
+                >
+                  {errorAction.label}
+                </button>
+              )}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -383,13 +460,14 @@ function CadastroPage() {
                 update={update}
                 preFilled={data.mode === "new" && !!data.brand}
                 lockIdentity={data.mode !== "new"}
+                errors={missingStep2}
               />
             </Suspense>
           )}
 
           {step === 3 && (
             <Suspense fallback={<WizardLoading />}>
-              <StepEntrada data={data} update={update} />
+              <StepEntrada data={data} update={update} errors={missingStep3} />
             </Suspense>
           )}
 
