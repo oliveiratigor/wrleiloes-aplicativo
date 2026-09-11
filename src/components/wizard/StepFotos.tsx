@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Camera, Check, Loader2, RotateCcw } from "lucide-react";
+import { Camera, Check, ImageIcon, Loader2, RotateCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { tiposFotosQuery } from "@/lib/api/lookups";
@@ -19,6 +19,7 @@ type Slot = {
   type: PhotoType;
   file?: File;
   uploadedUrl?: string;
+  localPreviewUrl?: string;
   mediaId?: string;
   status: "idle" | "queued" | "uploading" | "done" | "error" | "retrying";
   error?: string;
@@ -42,7 +43,18 @@ export function StepFotos({
     photoTypes.map((t) => ({ type: t, status: "idle" })),
   );
   const inputsRef = useRef<Record<string, HTMLInputElement | null>>({});
+  const objectUrlsRef = useRef<Set<string>>(new Set());
   const [editingFile, setEditingFile] = useState<{ file: File; slot: Slot } | null>(null);
+
+  // Revoga todos os object URLs criados para preview local ao desmontar.
+  useEffect(() => {
+    return () => {
+      for (const url of objectUrlsRef.current) {
+        URL.revokeObjectURL(url);
+      }
+      objectUrlsRef.current.clear();
+    };
+  }, []);
 
   // Hidrata fotos já existentes na entrada (caso esteja editando entrada aberta)
   useEffect(() => {
@@ -92,6 +104,8 @@ export function StepFotos({
           `photo_${item.photoTypeId}.jpg`,
           { type: item.mimeType },
         );
+        const localPreviewUrl = URL.createObjectURL(file);
+        objectUrlsRef.current.add(localPreviewUrl);
         const res = await uploadFotoWithFallback({
           file,
           productId: item.productId,
@@ -107,6 +121,7 @@ export function StepFotos({
                   ...s,
                   status: "done",
                   uploadedUrl: res.url,
+                  localPreviewUrl,
                   mediaId: res.mediaId,
                   file: undefined,
                   queuedId: undefined,
@@ -164,10 +179,17 @@ export function StepFotos({
   }, [slots, onAllRequiredDone, bypassFotos]);
 
   async function uploadSingle(slot: Slot, file: File) {
+    // Preview local criado antes do upload — evita baixar a mesma foto do S3.
+    if (slot.localPreviewUrl) {
+      URL.revokeObjectURL(slot.localPreviewUrl);
+      objectUrlsRef.current.delete(slot.localPreviewUrl);
+    }
+    const localPreviewUrl = URL.createObjectURL(file);
+    objectUrlsRef.current.add(localPreviewUrl);
     setSlots((prev) =>
       prev.map((s) =>
         s.type.id === slot.type.id
-          ? { ...s, file, status: "uploading", error: undefined }
+          ? { ...s, file, localPreviewUrl, status: "uploading", error: undefined }
           : s,
       ),
     );
@@ -312,12 +334,14 @@ export function StepFotos({
                 disabled={busy || isQueued}
                 className="relative block h-[180px] w-full overflow-hidden bg-muted"
               >
-                {s.uploadedUrl ? (
+                {s.localPreviewUrl ? (
                   <img
-                    src={s.uploadedUrl}
+                    src={s.localPreviewUrl}
                     alt={s.type.text}
                     className="h-full w-full object-cover"
                   />
+                ) : s.uploadedUrl ? (
+                  <SlotThumb url={s.uploadedUrl} alt={s.type.text} />
                 ) : s.file ? (
                   <FilePreview file={s.file} />
                 ) : (
@@ -432,4 +456,47 @@ function FilePreview({ file }: { file: File }) {
   }, [file]);
   if (!url) return null;
   return <img src={url} alt="preview" className="h-full w-full object-cover" />;
+}
+
+function SlotThumb({ url, alt }: { url: string; alt: string }) {
+  const [src, setSrc] = useState(url);
+  const [failed, setFailed] = useState(false);
+  const retriedRef = useRef(false);
+
+  useEffect(() => {
+    setSrc(url);
+    setFailed(false);
+    retriedRef.current = false;
+  }, [url]);
+
+  function handleError() {
+    if (!retriedRef.current) {
+      retriedRef.current = true;
+      window.setTimeout(() => {
+        setSrc(`${url}${url.includes("?") ? "&" : "?"}r=1`);
+      }, 1500);
+    } else {
+      setFailed(true);
+    }
+  }
+
+  if (failed) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-muted">
+        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+        <span className="text-[10px] font-medium text-muted-foreground">
+          Foto enviada
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={handleError}
+      className="h-full w-full object-cover"
+    />
+  );
 }
