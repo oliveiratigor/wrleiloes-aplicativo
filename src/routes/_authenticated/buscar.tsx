@@ -66,12 +66,9 @@ function BuscarPage() {
     setLoading(true);
     try {
       const buscarPayload = id.kind === "plate" ? { plate: id.plate } : { chassis: id.chassis };
-      const [busca, consulta] = await Promise.all([
-        buscarProduto(buscarPayload),
-        id.kind === "plate"
-          ? consultaVeiculo({ plate: id.plate })
-          : consultaVeiculo({ chassis: id.chassis }),
-      ]);
+      // Primeiro consultamos o nosso banco. A API externa só é chamada depois,
+      // e apenas quando realmente há lacuna a preencher.
+      const busca = await buscarProduto(buscarPayload);
       if (busca.error) {
         setError(busca.error);
         return;
@@ -88,6 +85,9 @@ function BuscarPage() {
         const ident = id.kind === "plate" ? id.plate : id.chassis;
         const wiz = emptyWizard(id.kind === "plate" ? id.plate : "", "new");
         if (id.kind === "chassis") wiz.chassis = id.chassis;
+        // Veículo não existe no banco: só agora fazemos a consulta externa.
+        // Erro aqui não bloqueia — vira cadastro manual.
+        const consulta = await safeConsultaVeiculo(consultaInput(id));
         if (consulta.data && hasUsefulConsulta(consulta.data)) {
           applyConsulta(wiz, consulta.data);
         } else {
@@ -129,15 +129,21 @@ function BuscarPage() {
       wiz.fuel = fipe_data.fuel ?? "";
       wiz.fipeCodigo = fipe_data.fipe_codigo ?? "";
       wiz.fipePrice = fipe_data.price != null ? String(fipe_data.price) : "";
-      wiz.yearManufacture = fipe_data.year_manufacture ?? fipe_data.year ?? "";
-      wiz.yearModel = fipe_data.year_model ?? fipe_data.year ?? "";
+      // Fabricação e modelo são anos diferentes: cada um vem do seu próprio
+      // campo. `fipe_data.year` não é usado como substituto aqui.
+      wiz.yearManufacture = fipe_data.year_manufacture != null ? String(fipe_data.year_manufacture) : "";
+      wiz.yearModel = fipe_data.year_model != null ? String(fipe_data.year_model) : "";
       wiz.branchId = product.branch_uuid ?? "";
       wiz.depositId = product.deposit_uuid ?? "";
       wiz.principalId = product.consignor_uuid ?? "";
       wiz.entryTypeId = product.entry_type_uuid ?? "";
 
-      // Preenche apenas lacunas com a consulta WR; o banco é a fonte de verdade.
-      if (consulta.data) fillGapsFromConsulta(wiz, consulta.data);
+      // Consulta externa só quando o cadastro no banco está incompleto.
+      // O banco é a fonte de verdade: a consulta preenche apenas lacunas.
+      if (needsConsulta(wiz)) {
+        const consulta = await safeConsultaVeiculo(consultaInput(id));
+        if (consulta.data) fillGapsFromConsulta(wiz, consulta.data);
+      }
 
       pushRecent(navPlate || product.plate);
 
@@ -444,6 +450,40 @@ function fillGapsFromConsulta(wiz: WizardState, c: ConsultaLike) {
     if (!current.trim() && m[key]) {
       (wiz[key] as string) = m[key];
     }
+  }
+}
+
+/** Campos cuja ausência no cadastro justifica consultar a API externa. */
+const CONSULTA_TRIGGER_FIELDS = [
+  "chassis",
+  "brand",
+  "model",
+  "yearManufacture",
+  "yearModel",
+] as const;
+
+/**
+ * True quando o wizard (alimentado pelo banco + fipe_data) ainda não tem os
+ * dados mínimos para identificar o veículo. Cadastro completo => sem consulta.
+ */
+function needsConsulta(wiz: WizardState): boolean {
+  return CONSULTA_TRIGGER_FIELDS.some((key) => !(wiz[key] ?? "").trim());
+}
+
+/** Monta o payload da consulta WR a partir do identificador detectado. */
+function consultaInput(id: { kind: "plate"; plate: string } | { kind: "chassis"; chassis: string }) {
+  return id.kind === "plate" ? { plate: id.plate } : { chassis: id.chassis };
+}
+
+/**
+ * Chama a consulta WR sem deixar um erro de rede/timeout travar a busca:
+ * qualquer falha vira `{ data: null }` e o fluxo segue (manual ou lacunas).
+ */
+async function safeConsultaVeiculo(input: { plate?: string; chassis?: string }) {
+  try {
+    return await consultaVeiculo(input);
+  } catch {
+    return { data: null, error: "consulta" };
   }
 }
 
