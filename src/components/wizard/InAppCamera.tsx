@@ -58,11 +58,14 @@ export function InAppCamera({
   onCapture,
   onCancel,
   onFallback,
+  onUseNative,
 }: {
   open: boolean;
   onCapture: (file: File) => void;
   onCancel: () => void;
   onFallback: (reason: CameraFallbackReason) => void;
+  /** Escolha manual do usuário: abre o input nativo sem desativar a câmera própria. */
+  onUseNative?: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -148,7 +151,8 @@ export function InAppCamera({
 
   function handleFallbackClick() {
     stopStream();
-    onFallback("unsupported");
+    if (onUseNative) onUseNative();
+    else onFallback("unsupported");
   }
 
   function shoot() {
