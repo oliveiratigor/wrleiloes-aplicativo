@@ -422,7 +422,6 @@ export function StepFotos({
         })}
       </div>
 
-
       {editingFile && (
         <ImageCropperModal
           file={editingFile.file}
