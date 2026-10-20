@@ -14,14 +14,6 @@ import { compressImage } from "@/lib/image/compress";
 import { supabase } from "@/lib/supabase";
 import type { PhotoType } from "@/lib/api/types";
 import { ImageCropperModal } from "./ImageCropperModal";
-import { toast } from "sonner";
-import {
-  InAppCamera,
-  canUseInAppCamera,
-  disableInAppCamera,
-  isInAppCameraDisabled,
-  type CameraFallbackReason,
-} from "./InAppCamera";
 
 type Slot = {
   type: PhotoType;
@@ -53,27 +45,6 @@ export function StepFotos({
   const inputsRef = useRef<Record<string, HTMLInputElement | null>>({});
   const objectUrlsRef = useRef<Set<string>>(new Set());
   const [editingFile, setEditingFile] = useState<{ file: File; slot: Slot } | null>(null);
-  const [cameraSlot, setCameraSlot] = useState<Slot | null>(null);
-
-  function openNativeInput(slotId: string) {
-    inputsRef.current[slotId]?.click();
-  }
-
-  function openCapture(slot: Slot) {
-    if (canUseInAppCamera() && !isInAppCameraDisabled()) setCameraSlot(slot);
-    else openNativeInput(slot.type.id);
-  }
-
-  function handleCameraFallback(reason: CameraFallbackReason) {
-    const slot = cameraSlot;
-    setCameraSlot(null);
-    if (reason === "denied") {
-      toast.error("Câmera bloqueada. Libere em Configurações › Apps › WR › Permissões › Câmera.");
-    } else {
-      disableInAppCamera();
-    }
-    if (slot) requestAnimationFrame(() => openNativeInput(slot.type.id));
-  }
 
   // Revoga todos os object URLs criados para preview local ao desmontar.
   useEffect(() => {
@@ -293,7 +264,7 @@ export function StepFotos({
 
   function retrySlot(slot: Slot) {
     if (slot.file) void uploadSingle(slot, slot.file);
-    else openCapture(slot);
+    else inputsRef.current[slot.type.id]?.click();
   }
 
   // Mantido para compatibilidade com retryQueued (não exposto na UI).
@@ -359,7 +330,7 @@ export function StepFotos({
             >
               <button
                 type="button"
-                onClick={() => openCapture(s)}
+                onClick={() => inputsRef.current[s.type.id]?.click()}
                 disabled={busy || isQueued}
                 className="relative block h-[180px] w-full overflow-hidden bg-muted"
               >
@@ -417,7 +388,7 @@ export function StepFotos({
                 <button
                   type="button"
                   onClick={() =>
-                    isError ? retrySlot(s) : openCapture(s)
+                    isError ? retrySlot(s) : inputsRef.current[s.type.id]?.click()
                   }
                   disabled={busy || isQueued}
                   className={btnClass}
@@ -451,21 +422,6 @@ export function StepFotos({
         })}
       </div>
 
-      <InAppCamera
-        open={cameraSlot !== null}
-        onCapture={(file) => {
-          const slot = cameraSlot;
-          setCameraSlot(null);
-          if (slot) onFileChange(slot, file);
-        }}
-        onCancel={() => setCameraSlot(null)}
-        onFallback={handleCameraFallback}
-        onUseNative={() => {
-          const slot = cameraSlot;
-          setCameraSlot(null);
-          if (slot) requestAnimationFrame(() => openNativeInput(slot.type.id));
-        }}
-      />
 
       {editingFile && (
         <ImageCropperModal
@@ -482,9 +438,9 @@ export function StepFotos({
           }}
           onCancel={() => setEditingFile(null)}
           onRetake={() => {
-            const slot = editingFile.slot;
+            const slotId = editingFile.slot.type.id;
             setEditingFile(null);
-            requestAnimationFrame(() => openCapture(slot));
+            requestAnimationFrame(() => inputsRef.current[slotId]?.click());
           }}
         />
       )}
